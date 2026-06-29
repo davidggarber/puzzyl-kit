@@ -1,6 +1,6 @@
 {
   "name": "@davidggarber/puzzyl-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Puzzyl utility library — shared kit for puzzle hunt event repos",
   "type": "module",
   "main": "dist/kit.umd.js",
@@ -13,7 +13,9 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly --outDir dist",
     "dev": "vite build --watch",
