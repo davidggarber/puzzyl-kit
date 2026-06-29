@@ -860,16 +860,20 @@ function setupAfterCss(bp: BoilerPlateData) {
     debugPostSetup();
 }
 
-
-declare let boiler: BoilerPlateData | undefined;
+declare global {
+  var boiler: BoilerPlateData | undefined;
+}
 
 /**
  * We forward-declare boiler, which we expect calling pages to define.
  * @returns The page's boiler, if any. Else undefined.
  */
 function pageBoiler():BoilerPlateData | undefined {
-    if (typeof boiler !== 'undefined') {
-        return boiler as BoilerPlateData;
+    if (typeof globalThis.boiler !== 'undefined') {
+        return globalThis.boiler as BoilerPlateData;
+    }
+    if (typeof window.boiler !== 'undefined') {
+        return window.boiler as BoilerPlateData;
     }
     return undefined;
 }
