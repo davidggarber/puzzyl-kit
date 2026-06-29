@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/projects/ClaudeCode/**)",
+      "Bash(ls \"D:\\\\projects\\\\ClaudeCode\\\\\")",
+      "Read(//d/projects/**)",
+      "Bash(ls \"D:\\\\git\\\\puzzyl-kit\\\\\" 2>/dev/null || echo \"Directory is empty or does not exist\")",
+      "Read(//d/git/puzzyl-kit\" 2>/dev/**)",
+      "Read(//d/git/GivingSafariTS/**)"
+    ],
+    "additionalDirectories": [
+      "D:\\projects\\ClaudeCode"
+    ]
+  }
+}

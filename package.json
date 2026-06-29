@@ -1,0 +1,41 @@
+{
+  "name": "@davidggarber/puzzyl-kit",
+  "version": "1.0.0",
+  "description": "Puzzyl utility library — shared kit for puzzle hunt event repos",
+  "type": "module",
+  "main": "dist/kit.umd.js",
+  "module": "dist/kit.es.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/kit.es.js",
+      "require": "./dist/kit.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "vite build && tsc --emitDeclarationOnly --outDir dist",
+    "dev": "vite build --watch",
+    "test": "npx playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davidggarber/puzzyl-kit.git"
+  },
+  "author": "David Garber",
+  "license": "ISC",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "bugs": {
+    "url": "https://github.com/davidggarber/puzzyl-kit/issues"
+  },
+  "homepage": "https://github.com/davidggarber/puzzyl-kit#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.45.3",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.1.6",
+    "vite": "^8.1.0"
+  }
+}
