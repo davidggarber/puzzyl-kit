@@ -1,6 +1,6 @@
 {
   "name": "@davidggarber/puzzyl-kit",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Puzzyl utility library — shared kit for puzzle hunt event repos",
   "type": "module",
   "main": "dist/kit.umd.js",
