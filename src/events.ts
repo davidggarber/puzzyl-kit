@@ -57,6 +57,12 @@ export function registerEvent(id: string, details: PuzzleEventDetails): void {
   eventRegistry[id] = details;
 }
 
+let defaultEvent: PuzzleEventDetails | undefined;
+
+export function registerDefaultEvent(details: PuzzleEventDetails): void {
+  defaultEvent = details;
+}
+
 let safariDetails: PuzzleEventDetails;
 
 /**
@@ -87,7 +93,7 @@ export function initSafariDetails(boiler?: BoilerPlateData): PuzzleEventDetails 
   }
 
   if (!boiler?.safari) {
-    return safariDetails = noEventDetails;
+    return safariDetails = defaultEvent ?? noEventDetails;
   }
 
   // Legacy string ID lookup in the runtime registry
