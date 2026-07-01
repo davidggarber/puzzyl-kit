@@ -44,9 +44,11 @@ type puzzleListBackLink = {
   friendly?: string;
 }
 
-const noEventDetails: PuzzleEventDetails = {
-  cssRoot: '../Css/',
-  links: []
+const genericEventDetails: PuzzleEventDetails = {
+  cssRoot: 'css/',
+  links: [],
+  icon: 'favicon.png',
+  logo: 'logo.png',
 };
 
 // Runtime registry: event repos call registerEvent() at startup so that
@@ -73,6 +75,7 @@ let safariDetails: PuzzleEventDetails;
  * Pages supporting multiple events can still use boiler.safaris = ['gs26', ...].
  */
 export function initSafariDetails(boiler?: BoilerPlateData): PuzzleEventDetails {
+
   // New API: event details passed directly — no registry lookup needed
   if (boiler?.event) {
     safariDetails = boiler.event;
@@ -82,33 +85,7 @@ export function initSafariDetails(boiler?: BoilerPlateData): PuzzleEventDetails 
     return safariDetails;
   }
 
-  // Legacy multi-event support: pick the first safari ID present in the URL args
-  if (boiler?.safaris) {
-    for (let i = 0; i < boiler.safaris.length; i++) {
-      if (urlArgExists(boiler.safaris[i])) {
-        boiler.safari = boiler.safaris[i];
-        break;
-      }
-    }
-  }
-
-  if (!boiler?.safari) {
-    return safariDetails = defaultEvent ?? noEventDetails;
-  }
-
-  // Legacy string ID lookup in the runtime registry
-  const found = eventRegistry[boiler.safari];
-  if (!found) {
-    console.error('Unrecognized Safari Event ID: ' + boiler.safari
-      + '. Call registerEvent() from your event repo before theBoiler() runs.');
-    return safariDetails = noEventDetails;
-  }
-
-  if (boiler.lookup) {
-    (boiler.lookup as Record<string, any>)['_safari'] = boiler.safari;
-  }
-
-  safariDetails = found;
+  safariDetails = defaultEvent ?? genericEventDetails;
   return safariDetails;
 }
 

@@ -183,8 +183,6 @@ type AbilityData = {
 
 export type BoilerPlateData = {
     event?: import('./events').PuzzleEventDetails;  // new: pass event details directly
-    safari?: string;  // legacy: event ID key for Safari details (use event instead)
-    safaris?: string[];  // legacy: candidate event IDs triggered by url arg
     title?: string;
     titleSync?: string;  // Title override when syncing
     noSync?: boolean;
@@ -511,7 +509,6 @@ function boilerplate(bp: BoilerPlateData) {
     }
     toggleClass(body, bp.paperSize);
     toggleClass(body, bp.orientation);
-    toggleClass(body, '_' + bp.safari);  // So event fonts can trump defaults
 
     setupEventSync(safariDetails.eventSync, safariDetails.usageSync);
 
