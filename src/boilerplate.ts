@@ -524,7 +524,7 @@ function boilerplate(bp: BoilerPlateData) {
         toggleClass(body, 'no-title', true);
     }
     if (bp.copyright || bp.author) {
-        margins.appendChild(createSimpleDiv({id:'copyright', text:'Â© ' + (bp.copyright || '') + ' ' + (bp.author || '')}));
+        margins.appendChild(createSimpleDiv({id:'copyright', text:'© ' + (bp.copyright || '') + ' ' + (bp.author || '')}));
     }
     const backlink = backlinkFromUrl();
     if (backlink) {
@@ -735,16 +735,16 @@ function setupAbilities(head:HTMLHeadElement, margins:HTMLDivElement, data:Abili
     let ability = document.getElementById('ability');
     if (ability != null) {
         const text = ability.innerText;
-        if (text.search('âœ”ï¸') >= 0) {
+        if (text.search('✔️') >= 0) {
             data.checkMarks = true;
         }
-        if (text.search('ðŸ’¡') >= 0) {
+        if (text.search('💡') >= 0) {
             data.highlights = true;
         }
-        if (text.search('ðŸ‘ˆ') >= 0) {
+        if (text.search('👈') >= 0) {
             data.dragDrop = true;
         }
-        if (text.search('âœ’ï¸') >= 0) {
+        if (text.search('✒️') >= 0) {
             data.stamping = true;
         }
     }
@@ -757,7 +757,7 @@ function setupAbilities(head:HTMLHeadElement, margins:HTMLDivElement, data:Abili
     let count = 0;
     if (data.checkMarks) {
         setupCrossOffs();
-        fancy += '<span id="check-ability" title="Click items to check them off">âœ”ï¸</span>';
+        fancy += '<span id="check-ability" title="Click items to check them off">✔️</span>';
         count++;
     }
     if (data.highlights) {

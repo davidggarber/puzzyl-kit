@@ -1,4 +1,4 @@
-﻿import { appendRange, consoleComment, expandContents, normalizeName } from "./builder";
+import { appendRange, consoleComment, expandContents, normalizeName } from "./builder";
 import { cloneAttributes, cloneText } from "./builderContext";
 import { applyAllClasses, getOptionalStyle, isTag, toggleClass } from "./classUtil";
 import { ContextError, debugTagAttrs, traceTagComment, elementSourceOffset, nodeSourceOffset, SourceOffset } from "./contextError";
@@ -167,7 +167,7 @@ function underNumberExtracts(extract:string, span:HTMLSpanElement) {
 }
 
 function specialLiterals(literal:string, span:HTMLSpanElement) {
-  if (literal === 'Â¤') {
+  if (literal === '¤') {
     toggleClass(span, 'block', true);
     literal = ' ';
   }

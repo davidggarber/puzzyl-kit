@@ -1,4 +1,4 @@
-﻿import { _rawHtmlSource } from "./boilerplate";
+import { _rawHtmlSource } from "./boilerplate";
 import { complexAttribute, makeString } from "./builderContext";
 import { consoleComment, pushRange } from "./builder";
 
@@ -289,7 +289,7 @@ export function traceTagComment(src:Element, dest:Element|Node[], expandFormulas
       complex = "Exception: " + ex;
     }
   }
-  const cmt1 = consoleComment(dbg1 + "âžŸ" + complex as string);
+  const cmt1 = consoleComment(dbg1 + "➟" + complex as string);
   if (Array.isArray(dest)) {
     pushRange(dest, cmt1);
   }

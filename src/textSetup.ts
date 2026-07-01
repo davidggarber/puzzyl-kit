@@ -1,4 +1,4 @@
-﻿import { hasClass, toggleClass, applyAllClasses, getOptionalStyle, findParentOfClass, isTag, SortElements, isArrowKeyElement, moveFocus, ArrowKeyElement } from "./classUtil";
+import { hasClass, toggleClass, applyAllClasses, getOptionalStyle, findParentOfClass, isTag, SortElements, isArrowKeyElement, moveFocus, ArrowKeyElement } from "./classUtil";
 import { onLetterKeyDown, onLetterChange, onWordKey, onWordChange, onLetterKeyUp, onWordInput, onLetterInput, onButtonKeyDown, hasInputGroup, setCurrentInputGroup } from "./textInput";
 import { indexAllInputFields } from "./storage"
 import { cloneSomeAttributes } from "./builderContext";
@@ -24,7 +24,7 @@ export function textSetup() {
  *   letter-cell-table: A table with this class will expect every cell
  *   data-letter-pattern: A string specifying the number of input, and any decorative text.
  *                        Example: "2-2-4" would create _ _ - _ _ - _ _ _ _
- *                        Special case: The character 'Â¤' is reserved for a solid block, like you might see in a crossword.
+ *                        Special case: The character '¤' is reserved for a solid block, like you might see in a crossword.
  *   data-extract-indeces: A string specifying which of these inputs should be auto-extracted.
  *                         The input indeces start at 1. To use more than one, separate by spaces.
  *                         Example: "1 8" would auto-extract the first and last characters from the above pattern.
@@ -219,12 +219,12 @@ export function getLetterStyles(   elmt: Element,
  */
 function createLetterLiteral(char: string)
                             : HTMLElement {
-    if (char == 'Â¶') {
+    if (char == '¶') {
         // Paragraph markers could be formatting, but just as likely are really spaces
         var br = document.createElement('br');
         br.classList.add('letter-input');
         br.classList.add('letter-non-input');
-        br.setAttributeNS(null, 'data-literal', 'Â¶');
+        br.setAttributeNS(null, 'data-literal', '¶');
         return br;
     }
     var span = document.createElement('span');
@@ -244,7 +244,7 @@ function initLiteralLetter( span: HTMLElement,
     if (char == ' ') {
         span.innerText = '\xa0';
     }
-    else if (char == 'Â¤') {
+    else if (char == '¤') {
         span.innerText = '\xa0';
         span.classList.add('block');
     }

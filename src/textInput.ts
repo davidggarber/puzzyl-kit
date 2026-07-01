@@ -1,4 +1,4 @@
-﻿import { isTag, hasClass, getOptionalStyle,
+import { isTag, hasClass, getOptionalStyle,
     findParentOfClass, findFirstChildOfClass, findNextOfClass, 
     findInNextContainer, findEndInContainer,
     moveFocus, toggleClass, SortElements, 
@@ -1235,7 +1235,7 @@ function spaceOverNextInput(input: TextInputElement, code: string) {
         prior = findNextOfClass(input, 'letter-input', undefined, -1) as HTMLInputElement;
         if (prior != null && hasClass(prior, 'letter-non-input') && findNextOfClass(prior, 'letter-input') == input) {
             var lit = prior.getAttribute('data-literal');
-            if (lit == ' ' || lit == 'Â¶') {  // match any space-like things  (lit == 'Â¤'?)
+            if (lit == ' ' || lit == '¶') {  // match any space-like things  (lit == '¤'?)
                 prior = findNextOfClass(prior, 'letter-input', 'literal', -1) as HTMLInputElement;
                 if (prior != null && prior.value != '') {
                     // This looks much more like a simple space between words

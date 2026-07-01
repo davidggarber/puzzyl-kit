@@ -1,4 +1,4 @@
-﻿import { linkCss } from "./boilerplate";
+import { linkCss } from "./boilerplate";
 import { hasClass, isTag, toggleClass } from "./classUtil";
 import { eventRelIcon, getSafariDetails } from "./events";
 import { saveScratches } from "./storage";
@@ -264,7 +264,7 @@ export function textFromScratchDiv(div:HTMLDivElement):string {
         const child = div.childNodes[i];
         if (child.nodeType == Node.TEXT_NODE) {
             text += (child as Text).textContent;
-            text = text.replaceAll(" Â ", "  ");  // expand multiple spaces
+            text = text.replaceAll("  ", "  ");  // expand multiple spaces
         }
         else if (child.nodeType == Node.ELEMENT_NODE && isTag(child as Element, 'br')) {
             text += '\n';
@@ -375,7 +375,7 @@ function textIntoScratchDiv(text:string, div:HTMLDivElement) {
         if (i > 0) {
             div.appendChild(document.createElement('br'));
         }
-        const spaced = lines[i].replaceAll("  ", " Â ");  // multiple spaces would be lost
+        const spaced = lines[i].replaceAll("  ", "  ");  // multiple spaces would be lost
         div.appendChild(document.createTextNode(spaced));
         // console.log('flatten: ' + lines[i]);
     }

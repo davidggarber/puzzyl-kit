@@ -116,7 +116,7 @@ function paintByNumbersTemplate() :HTMLTemplateElement {
         </for>
         <tth class="pbn-corner-validation">
           êœ›&#xa0;&#xa0;&#xa0;&#xa0;êœ›&#xa0;&#xa0;&#xa0;&#xa0;êœ›
-          <br />â†&#xa0;validation</tth>
+          <br />←&#xa0;validation</tth>
       </ttr>
     </ttfoot>
   </ttable>`;
@@ -182,7 +182,7 @@ function paintByColorNumbersTemplate() :HTMLTemplateElement {
           </for>
           <tth class="pbn-corner-validation">
             êœ›&#xa0;&#xa0;&#xa0;&#xa0;êœ›&#xa0;&#xa0;&#xa0;&#xa0;êœ›
-            <br />â†&#xa0;validation</tth>
+            <br />←&#xa0;validation</tth>
         </ttr>
       </ttfoot>
     </if>

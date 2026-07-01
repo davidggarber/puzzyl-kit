@@ -1,4 +1,4 @@
-﻿import { isBodyDebug, isPrint, theBoiler } from "./boilerplate";
+import { isBodyDebug, isPrint, theBoiler } from "./boilerplate";
 import { hasClass, toggleClass,     
     moveFocus, findNextOfClass, findParentOfClass, getOptionalStyle } from "./classUtil";
 import { indexAllNoteFields, indexAllCheckFields, indexAllHighlightableFields, 
@@ -220,7 +220,7 @@ export function setupCrossOffs() {
 
         var check = document.createElement('span');
         check.classList.add('check');
-        //check.innerHTML = '&#x2714;&#xFE0F;' // âœ”ï¸;
+        //check.innerHTML = '&#x2714;&#xFE0F;' // ✔️;
         cell.appendChild(check);
     }
     indexAllCheckFields();
