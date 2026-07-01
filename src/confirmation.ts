@@ -1,6 +1,7 @@
-﻿import { theBoiler } from "./boilerplate";
+import { theBoiler } from "./boilerplate";
 import { consoleTrace } from "./builder";
 import { getOptionalStyle, isTag, toggleClass } from "./classUtil";
+import { eventRelIcon } from "./events";
 import { EventSyncActivity, pingEventServer } from "./eventSync";
 import { scanMetaMaterials } from "./meta";
 import { PuzzleStatus, getCurFileName, saveGuessHistory, updatePuzzleList } from "./storage";
@@ -52,11 +53,11 @@ const default_responses = [
  * img src= URLs for icons to further indicate whether guesses were correct or not
  */
 const response_img = [
-    "../Icons/X.png",         // Error
-    "../Icons/Check.png",     // Correct
-    "../Icons/Thumb.png",     // Confirmation
-    "../Icons/Thinking.png",  // Keep Going
-    "../Icons/Unlocked.png",  // Unlock
+    eventRelIcon("X.png"),         // Error
+    eventRelIcon("Check.png"),     // Correct
+    eventRelIcon("Thumb.png"),     // Confirmation
+    eventRelIcon("Thinking.png"),  // Keep Going
+    eventRelIcon("Unlocked.png"),  // Unlock
 ];
 
 /**

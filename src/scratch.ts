@@ -1,6 +1,6 @@
 ﻿import { linkCss } from "./boilerplate";
 import { hasClass, isTag, toggleClass } from "./classUtil";
-import { getSafariDetails } from "./events";
+import { eventRelIcon, getSafariDetails } from "./events";
 import { saveScratches } from "./storage";
 
 let scratchPad:HTMLDivElement|undefined = undefined;
@@ -385,7 +385,7 @@ const allowDropOnScratchPad = (ev:DragEvent) => { ev.preventDefault(); };
 
 function attachDragHandle(div:HTMLDivElement) {
     const handle = document.createElement('img');
-    handle.src = '../Icons/ScratchMove.png';
+    handle.src = eventRelIcon('ScratchMove.png');
     toggleClass(handle, 'scratch-drag-handle', true);
     div.appendChild(handle);
 

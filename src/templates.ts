@@ -1,7 +1,7 @@
-﻿import { linkCss } from "./boilerplate";
+import { linkCss } from "./boilerplate";
 import { validateInputReady } from "./confirmation";
 import { ContextError } from "./contextError";
-import { getSafariDetails } from "./events";
+import { eventRelStamp, getSafariDetails } from "./events";
 
 /**
  * Find a template that matches an ID.
@@ -85,7 +85,7 @@ function paintByNumbersTemplate() :HTMLTemplateElement {
             For instructions, see 
             <a href="https://help.puzzyl.net/PBN" target="_blank">
               https://help.puzzyl.net/PBN<br />
-              <img src="../Images/Intro/pbn.png" />
+              <img src="$eventRelImage('Intro/pbn.png')" />
             </a>
           </span>
         </tth>
@@ -384,7 +384,7 @@ export function copyto_final_answer(id:string = 'extracted') {
 
 
 var pbnStampTools = [
-  {id:'stampPaint', modifier:'ctrl', label:'Paint', img:'../Images/Stamps/brushH.png', next:'stampBlank'},
-  {id:'stampBlank', modifier:'shift', label:'Blank', img:'../Images/Stamps/blankH.png', next:'stampErase'},
-  {id:'stampErase', modifier:'alt', label:'Erase', img:'../Images/Stamps/eraserH.png', next:'stampPaint'},
+  {id:'stampPaint', modifier:'ctrl', label:'Paint', img:eventRelStamp('brushH.png'), next:'stampBlank'},
+  {id:'stampBlank', modifier:'shift', label:'Blank', img:eventRelStamp('blankH.png'), next:'stampErase'},
+  {id:'stampErase', modifier:'alt', label:'Erase', img:eventRelStamp('eraserH.png'), next:'stampPaint'},
 ];

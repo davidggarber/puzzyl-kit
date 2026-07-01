@@ -1,6 +1,7 @@
-﻿import { isIcon, isIFrame, isModal, isPrint, theBoiler } from "./boilerplate";
+import { isIcon, isIFrame, isModal, isPrint, theBoiler } from "./boilerplate";
 import { consoleTrace } from "./builder";
 import { hasClass, toggleClass } from "./classUtil";
+import { eventRelIcon } from "./events";
 import { showRatingUI } from "./rating";
 import { cacheLogin, getLogin, getPuzzleStatus, TryParseJson, updatePuzzleList } from "./storage";
 
@@ -286,7 +287,7 @@ function updateLoginUI() {
       avatar.innerText = _emojiAvatar;
     }
     else {
-      img.src = _teamName ? '../Icons/logged-in-team.png' : '../Icons/logged-in.png';
+      img.src = _teamName ? eventRelIcon("logged-in-team.png") : eventRelIcon("logged-in.png");
       avatar.innerHTML = '';
     }
     span.innerText = _teamName ? (_playerName + ' @ ' + _teamName) : _playerName;
@@ -296,7 +297,7 @@ function updateLoginUI() {
   }
   else {
     // Logged out
-    img.src = '../Icons/logged-out.png';
+    img.src = eventRelIcon("logged-out.png");
     avatar.innerHTML = '';
     span.innerText = "Login?";
     div.onclick = function(e) { promptLogin(e);};

@@ -21,6 +21,7 @@ export type PuzzleEventDetails = {
   puzzleList?: string;  // The URL of the index page for this event. A back-pointer from each puzzle
   puzzleListName?: string;
   cssRoot: string;  // Folder for CSS files for generic puzzle layout. Often shared across events.
+  imageRoot: string;  // Folder for image files for this event
   fontCss?: string;  // Specific font stylesheet for this event
   googleFonts?: string;  // comma-delimited list of font names to load with Google APIs
   links: LinkDetails[];  // A list of additional link tags to add to every puzzle
@@ -46,6 +47,7 @@ type puzzleListBackLink = {
 
 const genericEventDetails: PuzzleEventDetails = {
   cssRoot: 'css/',
+  imageRoot: 'images/',
   links: [],
   icon: 'favicon.png',
   logo: 'logo.png',
@@ -152,4 +154,50 @@ export function lookupSafari(name: string): PuzzleEventDetails | null {
     }
   }
   return null;
+}
+
+/**
+ * Refer to a css file which should be in the event's cssRoot directory.
+ * @param path relative path to the CSS file within the event's cssRoot directory.
+ * @returns A relative path to the event src directory.
+ */
+export function eventRelCss(path: string): string {
+  return (safariDetails?.cssRoot || 'css/') + path;
+}
+
+/**
+ * Refer to an image file which should be in the event's imageRoot directory.
+ * @param path relative path to the image file within the event's imageRoot directory.
+ * @returns A relative path to the event src directory.
+ */
+export function eventRelImage(path: string): string {
+  return (safariDetails?.imageRoot || 'images/') + path;
+}
+
+/**
+ * Refer to an icon file which should be in the event's icon image directory.
+ * @param path relative path to the icon file within the event's iconRoot directory,
+ * or else the icons sub-folder under the imageRoot.
+ * @returns A relative path to the event src directory.
+ */
+export function eventRelIcon(path: string): string {
+  return (safariDetails?.iconRoot || eventRelImage('icons/')) + path;
+}
+
+/**
+ * Refer to an stamp file which should be in the event's stamp image directory.
+ * @param path relative path to the stamp file within the event's stamps sub-folder under the imageRoot.
+ * @returns A relative path to the event src directory.
+ */
+export function eventRelStamp(path: string): string {
+  return eventRelImage('stamps/') + path;
+}
+
+/**
+ * Refer to an star file which should be in the event's star image directory.
+ * @param path relative path to the star file within the event's stars sub-folder under the imageRoot.
+ * @returns A relative path to the event src directory.
+ */
+export function eventRelStar(path: string): string {
+  return eventRelImage('stars/') + path;
 }

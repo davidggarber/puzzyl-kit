@@ -1,4 +1,4 @@
-﻿import { clicksFindInputs, textSetup } from "./textSetup"
+import { clicksFindInputs, textSetup } from "./textSetup"
 import { hasClass, TextInputElement, toggleClass } from "./classUtil"
 import { setupNotes, setupCrossOffs, setupHighlights } from "./notes"
 import { setupDecoderToggle } from "./decoders"
@@ -10,7 +10,7 @@ import { TableDetails, constructTable } from "./tableBuilder";
 import { setupSubways } from "./subway";
 import { setupValidation, theValidation } from "./confirmation";
 import { expandControlTags, hasBuilderElements } from "./builder";
-import { LinkDetails, backlinkFromUrl, enableValidation, getSafariDetails, initSafariDetails } from "./events";
+import { LinkDetails, backlinkFromUrl, enableValidation, eventRelCss, eventRelStamp, getSafariDetails, initSafariDetails } from "./events";
 import { diffSummarys, LayoutSummary, renderDiffs, summarizePageLayout } from "./testUtils";
 import { wrapContextError } from "./contextError";
 import { setupScratch } from "./scratch";
@@ -56,7 +56,7 @@ function debugSetup() {
         toggleClass(document.getElementsByTagName('body')[0], 'debug', true);
     }
     if (urlArgs['compare-layout'] != undefined) {
-        linkCss('../Css/TestLayoutDiffs.css');  // TODO: path
+        linkCss(eventRelCss('TestLayoutDiffs.css'));  // TODO: path
     }
 
     var isiPad = navigator.userAgent.match(/iPad/i) != null;
@@ -765,12 +765,12 @@ function setupAbilities(head:HTMLHeadElement, margins:HTMLDivElement, data:Abili
         if (theBoiler()?.abilities?.textInput) {
             instructions = "Type ` or ctrl+click to highlight cells";
         }
-        fancy += '<span id="highlight-ability" title="' + instructions + '" style="text-shadow: 0 0 3px black;">ðŸ’¡</span>';
+        fancy += '<span id="highlight-ability" title="' + instructions + '" style="text-shadow: 0 0 3px black;">💡</span>';
         setupHighlights();
         count++;
     }
     if (data.dragDrop !== undefined && data.dragDrop !== false) {
-        fancy += '<span id="drag-ability" title="Drag &amp; drop enabled" style="text-shadow: 0 0 3px black;">ðŸ‘ˆ</span>';
+        fancy += '<span id="drag-ability" title="Drag &amp; drop enabled" style="text-shadow: 0 0 3px black;">👈</span>';
         if (typeof(data.dragDrop === 'string')) {
             preprocessSvgDragFunctions(data.dragDrop as string);
             indexAllDragDropFields();
@@ -785,25 +785,26 @@ function setupAbilities(head:HTMLHeadElement, margins:HTMLDivElement, data:Abili
     }
     if (data.stamping) {
         // Review: ability icon
-        fancy += '<span id="stamp-ability" title="Click on objects to interact"><img id="stamp-ability-icon" src="../Images/Stamps/stamp-glow.png" style="height:22px;" /></span>';
+        fancy += '<span id="stamp-ability" title="Click on objects to interact"><img id="stamp-ability-icon" src="' 
+            + eventRelStamp('stamp-glow.png') + '" style="height:22px;" /></span>';
         preprocessStampObjects();
         indexAllDrawableFields();
         linkCss(safariDetails.cssRoot + 'StampTools.css');
     }
     if (data.straightEdge) {
-        fancy += '<span id="drag-ability" title="Line-drawing enabled" style="text-shadow: 0 0 3px black;">ðŸ“</span>';
+        fancy += '<span id="drag-ability" title="Line-drawing enabled" style="text-shadow: 0 0 3px black;">📐</span>';
         preprocessRulerFunctions(EdgeTypes.straightEdge, false);
         linkCss(safariDetails.cssRoot + 'StraightEdge.css');
         //indexAllVertices();
     }
     if (data.wordSearch) {
-        fancy += '<span id="drag-ability" title="word-search enabled" style="text-shadow: 0 0 3px black;">ðŸ’Š</span>';
+        fancy += '<span id="drag-ability" title="word-search enabled" style="text-shadow: 0 0 3px black;">💊</span>';
         preprocessRulerFunctions(EdgeTypes.wordSelect, true);
         linkCss(safariDetails.cssRoot + 'WordSearch.css');
         //indexAllVertices();
     }
     if (data.hashiBridge) {
-        // fancy += '<span id="drag-ability" title="word-search enabled" style="text-shadow: 0 0 3px black;">ðŸŒ‰</span>';
+        // fancy += '<span id="drag-ability" title="word-search enabled" style="text-shadow: 0 0 3px black;">🌉</span>';
         preprocessRulerFunctions(EdgeTypes.hashiBridge, true);
         linkCss(safariDetails.cssRoot + 'HashiBridge.css');
         //indexAllVertices();
@@ -819,7 +820,7 @@ function setupAbilities(head:HTMLHeadElement, margins:HTMLDivElement, data:Abili
     if (data.scratchPad) {
         setupScratch();
         let instructions = "Ctrl+click anywhere on the page to create a note.";
-        fancy += '<span id="highlight-ability" title="' + instructions + '" style="text-shadow: 0 0 3px black;">ðŸ“”</span>';
+        fancy += '<span id="highlight-ability" title="' + instructions + '" style="text-shadow: 0 0 3px black;">📔</span>';
     }
     if (data.decoder) {
         setupDecoderToggle(page, data.decoder);
