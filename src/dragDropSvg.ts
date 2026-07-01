@@ -1,4 +1,4 @@
-﻿import { info } from "console";
+import { info } from "console";
 import { findParentOfClass, findParentOfTag, getChildOrder, hasClass, isTag, matrixFromElement, moveChildOrder, mutualAncestor, toggleClass } from "./classUtil";
 import { svg_xmlns } from "./tableBuilder";
 import { debugTagAttrs } from "./contextError";

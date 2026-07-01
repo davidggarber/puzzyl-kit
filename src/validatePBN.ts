@@ -1,4 +1,4 @@
-﻿import { evaluateFormula, valueFromGlobalContext, theBoilerContext } from "./builderContext";
+import { evaluateFormula, valueFromGlobalContext, theBoilerContext } from "./builderContext";
 import { findParentOfClass, getOptionalComplex, getOptionalStyle, hasClass, toggleClass } from "./classUtil";
 import { StampToolDetails } from "./stampTools";
 

@@ -1,4 +1,4 @@
-﻿import { toggleClass } from "./classUtil";
+import { toggleClass } from "./classUtil";
 
 type Rect2D = {
     left: number;

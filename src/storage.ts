@@ -1,4 +1,4 @@
-﻿import { forceReload, isIFrame, isRestart, theBoiler } from "./boilerplate";
+import { forceReload, isIFrame, isRestart, theBoiler } from "./boilerplate";
 import { hasClass, toggleClass, getOptionalStyle, findFirstChildOfClass, clearAllClasses, isTag, getAllClasses } from "./classUtil";
 import { afterInputUpdate, updateWordExtraction } from "./textInput";
 import { quickMove, quickFreeMove, Position, positionFromStyle } from "./dragDrop";

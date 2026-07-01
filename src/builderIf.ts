@@ -1,4 +1,4 @@
-﻿import { consoleComment, expandContents, popBuilderElement, pushBuilderElement, pushRange, shouldThrow } from "./builder";
+import { consoleComment, expandContents, popBuilderElement, pushBuilderElement, pushRange, shouldThrow } from "./builder";
 import { evaluateAttribute, keyExistsInContext, makeFloat } from "./builderContext";
 import { isTag } from "./classUtil";
 import { ContextError, debugTagAttrs, elementSourceOffset, elementSourceOffseter, traceTagComment, wrapContextError } from "./contextError";

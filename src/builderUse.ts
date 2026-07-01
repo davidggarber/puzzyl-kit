@@ -1,4 +1,4 @@
-﻿import { isTrace } from "./boilerplate";
+import { isTrace } from "./boilerplate";
 import { expandContents, initElementStack, popBuilderElement, pushBuilderElement, shouldThrow } from "./builder";
 import { cloneText, complexAttribute, popBuilderContext, pushBuilderContext } from "./builderContext";
 import { ContextError, elementSourceOffset, wrapContextError } from "./contextError";

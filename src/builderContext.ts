@@ -1,4 +1,4 @@
-﻿import { isDebug, isTrace, theBoiler } from "./boilerplate";
+import { isDebug, isTrace, theBoiler } from "./boilerplate";
 import { getTrimMode, normalizeName, TrimMode } from "./builder";
 import { isTag } from "./classUtil";
 import { SourceOffset, ContextError, wrapContextError, CodeError, elementSourceOffset, SourceOffsetable } from "./contextError";

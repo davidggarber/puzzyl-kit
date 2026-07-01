@@ -1,4 +1,4 @@
-﻿import { isDebug } from "./boilerplate";
+import { isDebug } from "./boilerplate";
 import { findParentOfClass, findParentOfTag, hasClass, toggleClass } from "./classUtil";
 import { Position } from "./dragDrop";
 import { getGlobalIndex, indexAllVertices, mapGlobalIndeces, saveStraightEdge } from "./storage";

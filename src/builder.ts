@@ -1,4 +1,4 @@
-﻿import { isDebug, isTrace, theBoiler } from "./boilerplate";
+import { isDebug, isTrace, theBoiler } from "./boilerplate";
 import { cloneAttributes, cloneTextNode, complexAttribute } from "./builderContext";
 import { startForLoop } from "./builderFor";
 import { ifResult, startIfBlock } from "./builderIf";

@@ -1,4 +1,4 @@
-﻿import { getParentIf } from "./builder";
+import { getParentIf } from "./builder";
 import { cloneText, complexAttribute } from "./builderContext";
 import { hasInputGroup, setCurrentInputGroup } from "./textInput";
 

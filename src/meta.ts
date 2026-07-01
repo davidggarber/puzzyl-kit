@@ -1,4 +1,4 @@
-﻿import { isIFrame } from "./boilerplate";
+import { isIFrame } from "./boilerplate";
 import { refillFromTemplate } from "./builderUse";
 import { hasClass, toggleClass } from "./classUtil";
 import { ContextError } from "./contextError";

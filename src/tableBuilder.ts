@@ -1,4 +1,4 @@
-﻿
+
 /***********************************************************
  * TABLEBUILDER.TS
  * Utilities for building pages with 2D tables

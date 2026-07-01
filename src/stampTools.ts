@@ -1,4 +1,4 @@
-﻿import { findAncestor } from "typescript";
+import { findAncestor } from "typescript";
 import { theBoiler } from "./boilerplate";
 import { useTemplate } from "./builderUse";
 import { applyAllClasses, clearAllClasses, findFirstChildOfClass, findNthChildOfClass, findParentOfClass, findParentOfTag, getElementsByClassOrId, getOptionalStyle, hasClass, isTag, siblingIndexOfClass, toggleClass } from "./classUtil";

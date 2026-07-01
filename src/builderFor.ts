@@ -1,4 +1,4 @@
-﻿import { consoleComment, expandContents, popBuilderElement, pushBuilderElement, pushRange, splitEmoji } from "./builder";
+import { consoleComment, expandContents, popBuilderElement, pushBuilderElement, pushRange, splitEmoji } from "./builder";
 import { cloneText, evaluateAttribute, makeInt, makeString, popBuilderContext, pushBuilderContext } from "./builderContext";
 import { ContextError, debugTagAttrs, elementSourceOffset, elementSourceOffseter } from "./contextError";
 

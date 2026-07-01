@@ -1,4 +1,4 @@
-﻿import { findFirstChildOfClass, findParentOfClass, getElementsByClassOrId, hasClass, isSelfOrParent, toggleClass } from "./classUtil";
+import { findFirstChildOfClass, findParentOfClass, getElementsByClassOrId, hasClass, isSelfOrParent, toggleClass } from "./classUtil";
 import { saveContainerLocally, savePositionLocally } from "./storage";
 
 export type Position = {

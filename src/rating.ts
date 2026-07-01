@@ -1,4 +1,4 @@
-﻿import { theBoiler } from "./boilerplate";
+import { theBoiler } from "./boilerplate";
 import { findParentOfClass, getOptionalStyle, hasClass, toggleClass } from "./classUtil";
 import { getSafariDetails, RatingDetails } from "./events";
 import { sendFeedback, sendRating } from "./eventSync";
