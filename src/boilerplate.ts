@@ -198,7 +198,7 @@ export type BoilerPlateData = {
     printAsColor?: boolean;  // true=color, false=grayscale, unset=unmentioned
     abilities?: AbilityData;  // booleans for various UI affordances
     pathToRoot?: string;  // By default, '.'
-    validation?: object;  // a dictionary of input fields mapped to dictionaries of encoded inputs and encoded responses
+    validation?: Record<string, any>;  // a dictionary of input fields mapped to dictionaries of encoded inputs and encoded responses
     tableBuilder?: TableDetails;  // Arguments to table-generate the page content (DEPRECATE)
     reactiveBuilder?: boolean|string;  // invoke the new reactive builder
     lookup?: object;  // a dictionary of json data available to builder code

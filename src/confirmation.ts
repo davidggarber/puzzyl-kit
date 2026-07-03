@@ -537,19 +537,30 @@ function rot13(source:string) {
 // }
 
 
-declare let validation: Record<string, any> | undefined;
+declare global {
+  var validation: Record<string, any> | undefined;
+}
 
 /**
- * We forward-declare boiler, which we expect calling pages to define.
- * @returns The page's boiler, if any. Else undefined.
+ * Find any validation object that the page has specified.
+ * @returns The page's validation object, if any. Else undefined.
  */
 function pageValidation():Record<string, any> | undefined {
-    // validation can be a standalone global variable, defined in another .js
-    if (typeof validation !== 'undefined') {
-        return validation as Record<string, any>;
+    // In order, look in...
+    //  1) the boiler
+    //  2) the globalThis
+    //  3) a random global (which is stored in window)
+
+    if (typeof theBoiler() !== 'undefined' && typeof theBoiler().validation !== 'undefined') {
+        return theBoiler().validation;
     }
-    // Or it can be a member of the boilerplate
-    return theBoiler().validation;
+    if (typeof globalThis.validation !== 'undefined') {
+        return globalThis.validation;
+    }
+    if (typeof window.validation !== 'undefined') {
+        return window.validation as Record<string, any>;
+    }
+    return undefined;
 }
 
 let _validation: Record<string, any>|undefined;

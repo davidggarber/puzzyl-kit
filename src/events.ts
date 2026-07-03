@@ -51,6 +51,7 @@ const genericEventDetails: PuzzleEventDetails = {
   links: [],
   icon: 'favicon.png',
   logo: 'logo.png',
+  validation: true,
 };
 
 // Runtime registry: event repos call registerEvent() at startup so that
