@@ -1,4 +1,4 @@
-import { consoleComment, expandContents, popBuilderElement, pushBuilderElement, pushRange, shouldThrow } from "./builder";
+import { consoleComment, expandContents, popBuilderElement, pushBuilderElement, pushRange, shouldThrow, warnIfSuspiciouslyEmpty } from "./builder";
 import { evaluateAttribute, keyExistsInContext, makeFloat } from "./builderContext";
 import { isTag } from "./classUtil";
 import { ContextError, debugTagAttrs, elementSourceOffset, elementSourceOffseter, traceTagComment, wrapContextError } from "./contextError";
@@ -27,7 +27,8 @@ export function startIfBlock(src:HTMLElement, result:ifResult):Node[] {
   const dest:Node[] = [];
   try {
     traceTagComment(src, dest, true);
-  
+    warnIfSuspiciouslyEmpty(src);
+    
     if (isTag(src, 'if')) {
       result.index = 1;
       // Each <if> tag resets the group's passed state

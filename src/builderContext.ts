@@ -577,7 +577,7 @@ export class FormulaNode {
       }
     }
     if (isTrace() && isDebug()) {
-      console.log(this.value + ' => ' + result);
+      console.log(this.value.text + ' => ' + result);
     }
     return result;
   }

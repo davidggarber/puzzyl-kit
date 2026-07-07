@@ -1,4 +1,4 @@
-import { isDebug, isTrace, theBoiler } from "./boilerplate";
+import { isDebug, isTrace, maybeBreak, theBoiler } from "./boilerplate";
 import { cloneAttributes, cloneTextNode, complexAttribute } from "./builderContext";
 import { startForLoop } from "./builderFor";
 import { ifResult, startIfBlock } from "./builderIf";
@@ -398,6 +398,8 @@ export function expandControlTags(rootId:string|boolean) {
   const ifResult:ifResult = {passed:false, index:0};
   for ( ; src !== null; src = firstBuilderElement()) {
     try {
+      maybeBreak(src.id);
+      maybeBreak(src.tagName);
       initElementStack(src);
       let dest:Node[] = [];
       if (isTag(src, ['if', 'elseif', 'else'])) {
@@ -481,6 +483,8 @@ export function expandContents(src:HTMLElement):Node[] {
     if (child.nodeType == Node.ELEMENT_NODE) {
       const child_elmt = child as HTMLElement;
       try {
+        maybeBreak(child_elmt.id);
+        maybeBreak(child_elmt.tagName);
         if (isTag(child_elmt, ['if', 'elseif', 'else'])) {
           pushRange(dest, startIfBlock(child_elmt, ifResult));
           continue;
@@ -600,6 +604,8 @@ function cloneWithContext(elmt:HTMLElement):Element {
     try {
       if (child.nodeType == Node.ELEMENT_NODE) {
         const child_elmt = child as HTMLElement;
+        maybeBreak(child_elmt.id);
+        maybeBreak(child_elmt.tagName);
         if (isTag(child_elmt, ['if', 'elseif', 'else'])) {
           appendRange(clone, startIfBlock(child_elmt, ifResult));
           continue;
@@ -635,6 +641,12 @@ function cloneWithContext(elmt:HTMLElement):Element {
   }
   popDestElement();
   return clone;
+}
+
+export function warnIfSuspiciouslyEmpty(elmt:HTMLElement):void {
+  if (elmt.innerHTML.trim() === '' && elmt.innerText.trim() === '') {
+    console.warn(`Teleportation warning! ${elmt.tagName} is suspiciously empty:`, elmt);
+  }
 }
 
 /**

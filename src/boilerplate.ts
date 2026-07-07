@@ -78,8 +78,18 @@ export function urlArgExists(arg:string):boolean {
  * NOTE: Debug features can be intrusive. Rendering artifacts and alerts.
  * @returns true if set, unless explictly set to false
  */
-export function isDebug() {
+export function isDebug():boolean {
     return urlArgs['debug'] != undefined && urlArgs['debug'] !== false;
+}
+
+/**
+ * If the URL contains a <i>break</i> argument matching the given element tag name or id, 
+ * the debugger will break at the point that element is about to be processed.
+ */
+export function maybeBreak(name:string):void {
+    if (name && 'break' in urlArgs && name.toLowerCase() === (urlArgs['break'] as string).toLowerCase()) {
+        debugger;
+    }
 }
 
 /**
@@ -87,7 +97,7 @@ export function isDebug() {
  * NOTE: Trace features should not be intrusive. Only console output.
  * @returns true if set, unless explictly set to false
  */
-export function isTrace() {
+export function isTrace():boolean {
     return urlArgs['trace'] != undefined && urlArgs['trace'] !== false;
 }
 
@@ -96,7 +106,7 @@ export function isTrace() {
  * or else if the puzzle explictly has set class='debug' on the body.
  * @returns true if set, unless explictly set to false
  */
-export function isBodyDebug() {
+export function isBodyDebug():boolean {
     return hasClass(document.getElementsByTagName('body')[0], 'debug');
 }
 
@@ -105,7 +115,7 @@ export function isBodyDebug() {
  * While any document could in theory be in an iframe, this library tags such pages with a url argument.
  * @returns true if this page's URL contains an iframe argument (other than false)
  */
-export function isIFrame() {
+export function isIFrame():boolean {
     return urlArgs['iframe'] != undefined && urlArgs['iframe'] !== false;
 }
 
@@ -114,7 +124,7 @@ export function isIFrame() {
  * This is intended to as an alternative way to get a print-look, other than CSS's @media print
  * @returns true if this page's URL contains a print argument (other than false)
  */
-export function isPrint() {
+export function isPrint():boolean {
     return urlArgs['print'] != undefined && urlArgs['print'] !== false;
 }
 
@@ -123,7 +133,7 @@ export function isPrint() {
  * This is intended to as an alternative way to generate icons for each puzzle
  * @returns true if this page's URL contains a print argument (other than false)
  */
-export function isIcon() {
+export function isIcon():boolean {
     return urlArgs['icon'] != undefined && urlArgs['icon'] !== false;
 }
 
@@ -131,7 +141,7 @@ export function isIcon() {
  * Identifies floating iframes, used to evoke modal dialogs.
  * @returns true if this page's URL contains a modal argument (other than false)
  */
-export function isModal() {
+export function isModal():boolean {
     return urlArgs['modal'] != undefined && urlArgs['modal'] !== false;
 }
 
@@ -139,7 +149,7 @@ export function isModal() {
  * Special url arg to override any cached storage. Always restarts.
  * @returns true if this page's URL contains a restart argument (other than =false)
  */
-export function isRestart() {
+export function isRestart():boolean {
     // An individual puzzle can set rules
     if (theBoiler().reloadOnRefresh !== undefined) {
         return !theBoiler().reloadOnRefresh;
@@ -382,11 +392,13 @@ function createTypeIcon(puzzleType:string, icon_use:string=''):HTMLDivElement {
 
 function boilerplate(bp: BoilerPlateData) {
     if (!bp) {
+        console.warn('Page does not contain a window.boiler object');
         return;
     }
     _boiler = bp;
 
     preSetup(bp)
+    maybeBreak('boilerplate');  // First chance
 
     /* A puzzle doc must have this shape:
      *   <html>
@@ -509,14 +521,25 @@ function boilerplate(bp: BoilerPlateData) {
     }
     toggleClass(body, bp.paperSize);
     toggleClass(body, bp.orientation);
+    if (safariDetails.eventClass) {
+        toggleClass(body, safariDetails.eventClass);
+    }
 
     setupEventSync(safariDetails.eventSync, safariDetails.usageSync);
 
-    const page: HTMLDivElement = createSimpleDiv({id:'page', cls:'printedPage'});
+    const page: HTMLDivElement = createSimpleDiv({id:'page'});
+    if (bp.paperSize != 'none') {
+        toggleClass(page, 'printedPage');
+    }
     const margins: HTMLDivElement = createSimpleDiv({cls:'pageWithinMargins'});
     body.appendChild(page);
     page.appendChild(margins);
-    margins.appendChild(pageBody);
+    if (pageBody) {
+        margins.appendChild(pageBody);
+    }
+    else {
+        console.warn('No &lt;div id="pageBody"&gt; found in the document.');
+    }
     if (bp.title) {
         margins.appendChild(createSimpleDiv({cls:'title', text:bp.title}));
     }

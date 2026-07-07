@@ -1,5 +1,5 @@
-import { consoleComment, expandContents, popBuilderElement, pushBuilderElement, pushRange, splitEmoji } from "./builder";
-import { cloneText, evaluateAttribute, makeInt, makeString, popBuilderContext, pushBuilderContext } from "./builderContext";
+import { consoleComment, expandContents, popBuilderElement, pushBuilderElement, pushRange, splitEmoji, warnIfSuspiciouslyEmpty } from "./builder";
+import { evaluateAttribute, makeInt, makeString, popBuilderContext, pushBuilderContext } from "./builderContext";
 import { ContextError, debugTagAttrs, elementSourceOffset, elementSourceOffseter } from "./contextError";
 
 /**
@@ -20,6 +20,8 @@ export function startForLoop(src:HTMLElement):Node[] {
   let iter:string|null = null;
   let list:any[] = [];
   let vals:any[] = [];  // not always used
+
+  warnIfSuspiciouslyEmpty(src);
 
   // <for each="variable_name" in="list">
   iter = getIterationVariable(src,'each');
@@ -165,4 +167,3 @@ function parseForKey(src:HTMLElement):any {
     throw new ContextError('Not an object with keys: ' + obj, elementSourceOffset(src, 'in'), ex);
   }
 }
-

@@ -14,6 +14,7 @@ type BackLinkDetails = {
 
 // Any relative paths should be relative to the calling puzzle page's folder
 export type PuzzleEventDetails = {
+  eventClass?: string;  // CSS class to apply to all <body> elements of event pages
   title?: string;  // The event title (or sub-title, after "Safari ##")
   logo?: string;  // The event's banner logo - large scale
   icon?: string;  // The favicon for all puzzles of this event
