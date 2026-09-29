@@ -62,7 +62,7 @@ npm test         # runs Playwright unit tests
 
 Publishing to GitHub Packages uses a dedicated token for this project. Create a
 GitHub Personal Access Token (classic) with `write:packages` access. Store it as
-the Windows user environment variable `PUZZYL_KIT_NODE_AUTH_TOKEN` using the
+the Windows user environment variable `PUZZYL_KIT_NODE_PUBLISH_TOKEN` using the
 Windows Environment Variables settings. Do not put the token in this repository
 or in a command that will be saved to shell history. Reopen PowerShell or VS Code
 after setting the variable so npm can read it.
@@ -83,7 +83,7 @@ npm publish
 ```
 
 `npm version` updates `package.json`, creates a commit, and adds the matching
-Git tag. `git push` uses Git's configured credentials; `PUZZYL_KIT_NODE_AUTH_TOKEN`
+Git tag. `git push` uses Git's configured credentials; `PUZZYL_KIT_NODE_PUBLISH_TOKEN`
 is for npm package access only.
 
 ### Downstream
