@@ -1387,12 +1387,24 @@ function getKeyedChild(parent:any, key:any, kTok?:SourceOffsetable, maybe?:boole
   }
 
   // Named members of objects
-  let trimmed = simpleTrim(key);
+  let trimmed = typeof(key) == 'string' ? simpleTrim(key) : key;
   // if (trimmed[trimmed.length - 1] == '?') {
   //   trimmed = trimmed.substring(0, trimmed.length - 1);
   //   maybe = true;
   // }
   if (!(trimmed in parent)) {
+    // Safely convert numbers to strings, and vice versa
+    if (typeof(trimmed) == 'number' && trimmed.toString() in parent) {
+      return parent[trimmed.toString()];
+    }
+    if (typeof(trimmed) == 'string') {
+      const n = parseInt(trimmed);
+      if (!Number.isNaN(n) && n in parent) {
+        return parent[n];
+      }
+      // REVIEW: I am avoiding any support for floating-point children, because they would mess with dot-notation
+    }
+
     if (maybe) {
       return '';
     }

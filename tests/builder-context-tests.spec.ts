@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { tokenizeText, testBuilderContext, valueFromContext, tokenizeFormula, FormulaNode, treeifyFormula, evaluateFormula, complexAttribute, FormulaToken } from '../src/builderContext';
 import { isContextError } from '../src/contextError';
 
-global.structuredClone = (val) => JSON.parse(JSON.stringify(val))
+globalThis.structuredClone = (val: any) => JSON.parse(JSON.stringify(val))
 
 test.beforeEach(() => {
   expect(testBuilderContext({

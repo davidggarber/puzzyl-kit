@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { valueFromContext, valueFromGlobalContext, getBuilderContext, popBuilderContext, pushBuilderContext, testBuilderContext, theBoilerContext } from '../src/builderContext';
 
-global.structuredClone = (val) => JSON.parse(JSON.stringify(val))
+globalThis.structuredClone = (val: any) => JSON.parse(JSON.stringify(val))
 
 test.beforeEach( () => {
 });

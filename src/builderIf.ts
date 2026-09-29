@@ -51,7 +51,7 @@ export function startIfBlock(src:HTMLElement, result:ifResult):Node[] {
     }
 
     let exists = evaluateAttribute(src, 'exists', false, false, false);
-    let notex = evaluateAttribute(src, 'notex', false, false, true);
+    let notex = evaluateAttribute(src, 'notex', true, false, null);
     let not = evaluateAttribute(src, 'not', true, false);
     let test = evaluateAttribute(src, 'test', true, false);
 
@@ -65,7 +65,7 @@ export function startIfBlock(src:HTMLElement, result:ifResult):Node[] {
       }
       else if (src.hasAttributeNS('', 'exists')) {
         // Does this attribute exist at all?
-        result.passed = exists;
+        result.passed = !!exists;
       }
       else {
         // Does this attribute exist at all?
@@ -73,7 +73,9 @@ export function startIfBlock(src:HTMLElement, result:ifResult):Node[] {
       }
     }
     else if (not !== undefined) {
-      result.passed = (not === 'false') || (not === '') || (not === null);
+      result.passed = (typeof(not) === 'boolean') ? !not :
+        typeof(not) === 'string' ? ((not === 'false') || (not === ''))
+        : (not === null);
     }
     else if (test !== undefined) {
       const testTok = elementSourceOffseter(src, 'test');
