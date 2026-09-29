@@ -58,14 +58,41 @@ npm test         # runs Playwright unit tests
 
 ## Publishing
 
-Always use `npm version` rather than editing `package.json` manually — it updates
-the version, commits it, and creates the matching git tag atomically, so they
-can never drift out of sync.
+### Configure package authentication
+
+Publishing to GitHub Packages uses a dedicated token for this project. Create a
+GitHub Personal Access Token (classic) with `write:packages` access. Store it as
+the Windows user environment variable `PUZZYL_KIT_NODE_AUTH_TOKEN` using the
+Windows Environment Variables settings. Do not put the token in this repository
+or in a command that will be saved to shell history. Reopen PowerShell or VS Code
+after setting the variable so npm can read it.
+
+The project `.npmrc` references that variable and routes this package scope to
+GitHub Packages. The token value is never stored in `.npmrc`.
+
+### Publish a release
+
+Run the following from the project directory:
 
 ```
+npm test
+npm run build
 npm version patch   # or minor / major
 git push origin main --tags
 npm publish
+```
+
+`npm version` updates `package.json`, creates a commit, and adds the matching
+Git tag. `git push` uses Git's configured credentials; `PUZZYL_KIT_NODE_AUTH_TOKEN`
+is for npm package access only.
+
+### Downstream
+
+Make sure to update other projects' `package.json` to the latest:
+```
+    "dependencies":  {
+                         "@davidggarber/puzzyl-kit":  "0.1.[latest]"
+                     },
 ```
 
 Packages are published to GitHub Packages as `@davidggarber/puzzyl-kit`.
