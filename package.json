@@ -18,7 +18,9 @@
   ],
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly --outDir dist",
+    "build:debug": "vite build --minify false && tsc --emitDeclarationOnly --outDir dist",
     "dev": "vite build --watch",
+    "dev:debug": "vite build --minify false --watch",
     "test": "npx playwright test"
   },
   "repository": {

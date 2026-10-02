@@ -1,5 +1,5 @@
 import { isDebug } from "./boilerplate";
-import { findParentOfClass, findParentOfTag, hasClass, toggleClass } from "./classUtil";
+import { findParentOfClass, findParentOfTag, getOptionalStyle, hasClass, toggleClass } from "./classUtil";
 import { Position } from "./dragDrop";
 import { getGlobalIndex, indexAllVertices, mapGlobalIndeces, saveStraightEdge } from "./storage";
 
@@ -46,12 +46,10 @@ export function distance2(pos:DOMPoint, pos2:DOMPoint): number {
  * @param areaCls the class name of the root SVG for drawing straight edges
  */
 export function preprocessRulerFunctions(mode:string, fill:boolean) {
-    selector_class = mode;
-    area_class = mode + '-area';
-    selector_fill_class = fill ? (selector_class + '-fill') : null;
+    const area_class = mode + '-area';
     let elems = document.getElementsByClassName(area_class);
     for (let i = 0; i < elems.length; i++) {
-        preprocessRulerRange(elems[i] as HTMLElement);
+        preprocessRulerRange(elems[i] as HTMLElement, mode);
         if (fill) {
             ensureFillContiainer(elems[i], mode);
         }
@@ -95,11 +93,14 @@ function ensureFillContiainer(area:Element, mode:string) {
 }
 
 /**
- * Identified which type of selector is enabled for this page
+ * Identified which type of selector is enabled for this SVG
+ * @param elem Any child of the SVG
+ * @param suffix An optional suffix to append to the mode (e.g., '-area')
  * @returns either 'straight-edge' or 'word-select'
  */
-export function getStraightEdgeType() {
-    return selector_class;
+export function getStraightEdgeType(elem:Element|null, suffix?:string):string {
+    const mode = getOptionalStyle(elem, 'data-straight-edge-type');
+    return mode ? mode + (suffix || '') : '';
 }
 
 /**
@@ -113,7 +114,11 @@ function preprocessEndpoint(elem:HTMLElement) {
  * Hook up the necessary mouse events to the background region for a ruler
  * @param elem a moveable element
  */
-function preprocessRulerRange(elem:HTMLElement) {
+function preprocessRulerRange(elem:HTMLElement, mode:string) {
+    if (!elem.id) {
+        console.error(`${mode} svg root elements must have an id.`);
+    }
+    elem.setAttribute('data-straight-edge-type', mode);
     elem.onpointermove=function(e){onRulerHover(e)};
     elem.onpointerdown=function(e){onLineStart(e)};
     elem.onpointerup=function(e){onLineUp(e)};
@@ -132,15 +137,15 @@ export const EdgeTypes = {
 /**
  * Which class are we looking for: should be one of the EdgeTypes
  */
-let selector_class:string;
+// let selector_class:string;
 /**
  * A second class, which can overlay the first as a fill
  */
-let selector_fill_class:string|null;
+// let selector_fill_class:string|null;
 /**
  * What is the class of the container: straight-edge-area or word-select-area
  */
-let area_class:string;
+// let area_class:string;  // mode + '-area';
 
 /**
  * A VertexData contains all the information about a defined vertex in the puzzle
@@ -174,6 +179,10 @@ type VertexData = {
  */
 type RulerEventData = {
     svg: SVGSVGElement;
+    mode: string;
+    selectorClass: string;
+    fillSelectorClass: string|null;
+    areaClass: string;
     container: Element;
     fillContainer: Element;
     buildContainer: Element;
@@ -195,33 +204,38 @@ type RulerEventData = {
 
 function createPartialRulerData(range:Element):RulerEventData {
     const svg = findParentOfTag(range, 'SVG') as SVGSVGElement;
-    const containers = svg.getElementsByClassName(selector_class + '-container');
+    const mode = svg.getAttribute('data-straight-edge-type') || '';
+    const containers = svg.getElementsByClassName(mode + '-container');
     const container = (containers && containers.length > 0) ? containers[0] : svg;
-    const fContainers = svg.getElementsByClassName(selector_class + '-fill-container');
+    const fContainers = svg.getElementsByClassName(mode + '-fill-container');
     const fContainer = (fContainers && fContainers.length > 0) ? fContainers[0] : container;
-    const bContainers = svg.getElementsByClassName(selector_class + '-build-container');
+    const bContainers = svg.getElementsByClassName(mode + '-build-container');
     const bContainer = (bContainers && bContainers.length > 0) ? bContainers[0] : fContainer;
     const bounds = svg.getBoundingClientRect();
     const max_points = range.getAttributeNS('', 'data-max-points');
     const maxPoints = max_points ? parseInt(max_points) : 2;
-    const defaultShare = selector_class == EdgeTypes.hashiBridge ? 'true' : 'false';
+    const defaultShare = mode == EdgeTypes.hashiBridge ? 'true' : 'false';
     const canShareVertices = range.getAttributeNS('', 'data-can-share-vertices') || defaultShare;
-    const defaultCross = selector_class == EdgeTypes.hashiBridge ? 'false' : 'true';
+    const defaultCross = mode == EdgeTypes.hashiBridge ? 'false' : 'true';
     const canCrossSelf = range.getAttributeNS('', 'data-can-cross-self') || defaultCross;
     const maxBridges = range.getAttributeNS('', 'data-max-bridges');
     const bridgeGap = range.getAttributeNS('', 'data-bridge-gap');
     const hoverRange = range.getAttributeNS('', 'data-hover-range');
-    const defaultAngleConstraint = selector_class == EdgeTypes.straightEdge ? undefined 
-                                : selector_class == EdgeTypes.wordSelect ? '45' : '90';
+    const defaultAngleConstraint = mode == EdgeTypes.straightEdge ? undefined 
+                                : mode == EdgeTypes.wordSelect ? '45' : '90';
     const angleConstraints = range.getAttributeNS('', 'data-angle-constraints') || defaultAngleConstraint;
-    const defaultTurnConstraint = selector_class == EdgeTypes.straightEdge ? undefined 
-                                : selector_class == EdgeTypes.wordSelect ? '0,45,90' : '0,90';
+    const defaultTurnConstraint = mode == EdgeTypes.straightEdge ? undefined 
+                                : mode == EdgeTypes.wordSelect ? '0,45,90' : '0,90';
     const turnConstraints = range.getAttributeNS('', 'data-turn-constraints') || defaultTurnConstraint;
     const showOpenDrag = range.getAttributeNS('', 'data-show-open-drag');
     const angleConstraints2 = angleConstraints ? (angleConstraints+'+0').split('+').map(c => parseInt(c)) : undefined;
     const turnConstraints2 = turnConstraints ? (turnConstraints).split(',').map(c => parseInt(c)) : undefined;
     const data:RulerEventData = {
         svg: svg, 
+        mode: mode,
+        selectorClass: mode,
+        areaClass: mode + '-area',
+        fillSelectorClass: mode + '-fill',
         container: container,
         fillContainer: fContainer,
         buildContainer: bContainer,
@@ -229,7 +243,7 @@ function createPartialRulerData(range:Element):RulerEventData {
         maxPoints: maxPoints <= 0 ? 10000 : maxPoints,
         canShareVertices: canShareVertices ? (canShareVertices.toLowerCase() == 'true') : false,
         canCrossSelf: canCrossSelf ? (canCrossSelf.toLowerCase() == 'true') : false,
-        maxBridges: maxBridges ? parseInt(maxBridges) : selector_class == EdgeTypes.hashiBridge ? 2 : 1,
+        maxBridges: maxBridges ? parseInt(maxBridges) : mode == EdgeTypes.hashiBridge ? 2 : 1,
         bridgeGap: bridgeGap ? parseInt(bridgeGap) : 8,
         hoverRange: hoverRange ? parseInt(hoverRange) : ((showOpenDrag != 'false') ? 30 : Math.max(bounds.width, bounds.height)),
         angleConstraints: angleConstraints2 ? angleConstraints2[0] : undefined,
@@ -248,7 +262,8 @@ function createPartialRulerData(range:Element):RulerEventData {
  * @returns A RulerEventData
  */
 function getRulerData(evt:MouseEvent):RulerEventData {
-    const range = findParentOfClass(evt.target as Element, area_class) as HTMLElement;
+    const areaClass = getStraightEdgeType(evt.target as Element, '-area');
+    const range = findParentOfClass(evt.target as Element, areaClass) as HTMLElement;
     const data = createPartialRulerData(range);
     data.evtPos = new DOMPoint(evt.x, evt.y);
     data.evtPoint = data.svg.createSVGPoint();
@@ -268,7 +283,8 @@ function getRulerData(evt:MouseEvent):RulerEventData {
  * @returns a RulerEventData
  */
 function getRulerDataFromVertex(vertex:HTMLElement):RulerEventData {
-    const range = findParentOfClass(vertex, area_class) as HTMLElement;
+    const areaClass = getStraightEdgeType(vertex, '-area');
+    const range = findParentOfClass(vertex, areaClass) as HTMLElement;
     const data = createPartialRulerData(range);
     const vBounds = vertex.getBoundingClientRect();
     data.evtPos = new DOMPoint(vBounds.x + vBounds.width / 2, vBounds.y + vBounds.height / 2);
@@ -303,9 +319,10 @@ function getVertexData(ruler:RulerEventData, vert:HTMLElement):VertexData {
 }
 
 /**
- * All straight edges on the page, except for the one under construction
+ * All straight edges on the page, except for the one under construction.
+ * The keys of the record are the ID of the container SVGs.
  */
-let _straightEdges:SVGPolylineElement[] = [];
+let _straightEdges:Record<string, SVGPolylineElement[]> = {};
 /**
  * The nearest vertex, if being affected by hover
  */
@@ -445,7 +462,7 @@ function createStraightLineFrom(ruler:RulerEventData, start:VertexData) {
     _straightEdgeVertices.push(start.vertex);
 
     _straightEdgeBuilder = document.createElementNS('http://www.w3.org/2000/svg', 'polyline') as SVGPolylineElement;
-    toggleClass(_straightEdgeBuilder, selector_class, true);
+    toggleClass(_straightEdgeBuilder, ruler.selectorClass, true);
     toggleClass(_straightEdgeBuilder, 'building', true);
     toggleClass(start.vertex, 'building', true);
     _straightEdgeBuilder.points.appendItem(start.centerPoint);
@@ -527,7 +544,7 @@ function completeStraightLine(ruler:RulerEventData, vertexList:string, save:bool
     }
 
     vertexList = normalizeVertexList(vertexList, _straightEdgeBuilder);
-    const dupes:Element[] = findDuplicateEdges(ruler, 'data-vertices', vertexList, selector_class, []);
+    const dupes:Element[] = findDuplicateEdges(ruler, 'data-vertices', vertexList, ruler.selectorClass, []);
     if (dupes.length >= ruler.maxBridges && _straightEdgeBuilder) {
         // Disallow any more duplicates
         ruler.buildContainer.removeChild(_straightEdgeBuilder);
@@ -535,17 +552,19 @@ function completeStraightLine(ruler:RulerEventData, vertexList:string, save:bool
     }
 
     if (_straightEdgeBuilder) {
+        const svgId = ruler.svg.id;
         // Convert to a normal (non-building) bridge
         // Move from build container to regular container (lower z-order)
         ruler.buildContainer.removeChild(_straightEdgeBuilder);
         toggleClass(_straightEdgeBuilder, 'building', false);
         ruler.container.appendChild(_straightEdgeBuilder);
         _straightEdgeBuilder.setAttributeNS('', 'data-vertices', vertexList);
-        _straightEdges.push(_straightEdgeBuilder);
+        _straightEdges[svgId] = _straightEdges[svgId] || [];
+        _straightEdges[svgId].push(_straightEdgeBuilder);
 
-        if (selector_fill_class) {
+        if (ruler.fillSelectorClass) {
             const fill = document.createElementNS('http://www.w3.org/2000/svg', 'polyline') as SVGPolylineElement;
-            toggleClass(fill, selector_fill_class, true);
+            toggleClass(fill, ruler.fillSelectorClass, true);
             for (let i = 0; i < _straightEdgeBuilder.points.length; i++) {
                 fill.points.appendItem(_straightEdgeBuilder.points[i]);
             }
@@ -607,8 +626,8 @@ function offsetBridge(ruler:RulerEventData, edge:SVGPolylineElement, offset:numb
     }
     edge.points.appendItem(end);
 
-    if (selector_fill_class) {
-        const fills = findDuplicateEdges(ruler, 'points', oldPoints, selector_fill_class, []);
+    if (ruler.fillSelectorClass) {
+        const fills = findDuplicateEdges(ruler, 'points', oldPoints, ruler.fillSelectorClass, []);
         if (fills.length > 0) {
             // Change just 1 to match
             fills[0].setAttributeNS('', 'points', edge.getAttributeNS('', 'points') || '');
@@ -799,13 +818,17 @@ function findDuplicateEdges(rules:RulerEventData, attr:string, points:string, cl
  * @param edge The edge to remove
  */
 function deleteStraightEdge(edge:SVGPolylineElement) {
-    const range = findParentOfClass(edge, area_class) as HTMLElement;
+    const areaClass = getStraightEdgeType(edge, '-area');
+    const range = findParentOfClass(edge, areaClass) as HTMLElement;
     const data = createPartialRulerData(range);
+    const svgId = data.svg.id;
 
-    for (let i = 0; i < _straightEdges.length; i++) {
-        if (_straightEdges[i] === edge) {
-            _straightEdges.splice(i, 1);
-            break;
+    if (_straightEdges[svgId]) {
+        for (let i = 0; i < _straightEdges[svgId].length; i++) {
+            if (_straightEdges[svgId][i] === edge) {
+                _straightEdges[svgId].splice(i, 1);
+                break;
+            }
         }
     }
 
@@ -813,9 +836,9 @@ function deleteStraightEdge(edge:SVGPolylineElement) {
     let dupes:Element[] = [];
     const points = (edge as Element).getAttributeNS('', 'points');
     if (points) {
-        dupes = findDuplicateEdges(data, 'points', points, selector_class, []);
-        if (selector_fill_class) {
-            dupes = findDuplicateEdges(data, 'points', points, selector_fill_class, dupes);
+        dupes = findDuplicateEdges(data, 'points', points, data.selectorClass, []);
+        if (data.fillSelectorClass) {
+            dupes = findDuplicateEdges(data, 'points', points, data.fillSelectorClass, dupes);
         }
     }
 
@@ -832,7 +855,7 @@ function deleteStraightEdge(edge:SVGPolylineElement) {
     }
 
     // See if there were any parallel bridges
-    dupes = findDuplicateEdges(data, 'data-vertices', vertexList, selector_class, []);
+    dupes = findDuplicateEdges(data, 'data-vertices', vertexList, data.selectorClass, []);
     if (dupes.length >= 1) {
         // If so, re-layout to show fewer
         for (let d = 0; d < dupes.length; d++) {
@@ -935,7 +958,7 @@ function distanceToLine(edge: SVGPolylineElement, pt: SVGPoint) {
  */
 function findEdgeUnder(data:RulerEventData):SVGPolylineElement|null {
     let min = data.hoverRange;
-    const edges = data.svg.getElementsByClassName(selector_class);
+    const edges = data.svg.getElementsByClassName(data.selectorClass);
     let nearest:SVGPolylineElement|null = null;
     for (let i = 0; i < edges.length; i++) {
         const edge = edges[i] as SVGPolylineElement;
@@ -956,7 +979,7 @@ function findEdgeUnder(data:RulerEventData):SVGPolylineElement|null {
  */
 function findStraightEdgeFromVertex(ruler:RulerEventData, index:number):SVGPolylineElement|null {
     const pat = ',' + String(index) + ',';
-    const edges = ruler.svg.getElementsByClassName(selector_class);
+    const edges = ruler.svg.getElementsByClassName(ruler.selectorClass);
     for (let i = 0; i < edges.length; i++) {
         const edge = edges[i] as SVGPolylineElement;
         const indexList = edge.getAttributeNS('', 'data-vertices')
@@ -1021,11 +1044,12 @@ export function createFromVertexList(vertexList:string) {
 
 export function clearAllStraightEdges(id:string) {
     const svg = document.getElementById(id);
+    const selectorClass = getStraightEdgeType(svg);
     if (!svg) {
         return;
     }
 
-    const edges = svg.getElementsByClassName(selector_class);
+    const edges = svg.getElementsByClassName(selectorClass);
     for (let i = edges.length - 1; i >= 0; i--) {
         const edge = edges[i];
         edge.parentNode?.removeChild(edge);

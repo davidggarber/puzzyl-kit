@@ -30,27 +30,27 @@ var ArrowNext = 'ArrowRight';
  * The change in horizontal index that happens after a right arrow
  * If RTL, this should be -1
  */
-var plusX = 1;
+var _plusX = 1;
 
 /**
  * todo: DOCUMENT THIS
  */
-var priorInputValue = '';
+var _priorInputValue = '';
 /**
  * The input 
  */
-let keyDownTarget:ArrowKeyElement|null = null;
+let _keyDownTarget:ArrowKeyElement|null = null;
 
 /**
  * The name of the currently highlighted input group
  */
-let inputGroupElement:ArrowKeyElement|null = null;
-let currentInputGroup:string|null = null;
+let _inputGroupElement:ArrowKeyElement|null = null;
+let _currentInputGroup:string|null = null;
 
 /**
  * Workaround for keydown/up on mobile
  */
-let keyDownUnidentified:boolean = true;
+let _keyDownUnidentified:boolean = true;
 
 export function onInputEvent(event: KeyboardEvent) {
     console.log(event);
@@ -61,10 +61,10 @@ export function onInputEvent(event: KeyboardEvent) {
  * @param event - A keyboard event
  */
 export function onLetterKeyDown(event: KeyboardEvent) {
-    keyDownUnidentified = event.which == 229;
+    _keyDownUnidentified = event.which == 229;
     var input = event.currentTarget as TextInputElement;
-    keyDownTarget = input;
-    priorInputValue = input.value;
+    _keyDownTarget = input;
+    _priorInputValue = input.value;
 
     var code = event.code;
     if (code == undefined || code == '') {
@@ -91,7 +91,7 @@ export function onLetterKeyDown(event: KeyboardEvent) {
             var e = input.selectionEnd;
             if (s == e && e == input.value.length) {
                 const next = findNextGroupInput(input, true, true, inpClass)
-                            || findNextInput(input, plusX, 0, inpClass, skipClass);
+                            || findNextInput(input, _plusX, 0, inpClass, skipClass);
                 if (next != null) {
                     moveFocus(next, 0);
                 }
@@ -103,7 +103,7 @@ export function onLetterKeyDown(event: KeyboardEvent) {
             var e = input.selectionEnd;
             if (s == e && e == 0) {
                 const prior = findNextGroupInput(input, false, true, inpClass)
-                            || findNextInput(input, -plusX, 0, inpClass, skipClass);
+                            || findNextInput(input, -_plusX, 0, inpClass, skipClass);
                 if (prior != null) {
                     moveFocus(prior, prior.value.length);
                 }
@@ -162,22 +162,26 @@ export function onLetterKeyDown(event: KeyboardEvent) {
 export function onButtonKeyDown(event: KeyboardEvent) {
     var current = event.currentTarget as ArrowKeyElement;
     if (processArrowKeys(current, event)) {
-        keyDownTarget = current;
+        _keyDownTarget = current;
     }
 }
 
 const arrowKeyCodes = [
     'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+];
+const extendedArrowKeyCodes = [
     'Home', 'End', 'PageUp', 'PageDown'
 ];
 
 /**
  * Is this key an arrow key?
  * @param code A key code
+ * @param extended If true, also consider extended arrow keys (Home, End, PageUp, PageDown)
  * @returns True, if any of the usual arrow keys
  */
-function isArrowKey(code:string) {
-    return arrowKeyCodes.indexOf(code) >= 0;
+function isArrowKey(code:string, extended:boolean = false) {
+    return arrowKeyCodes.indexOf(code) >= 0
+        || (extended && extendedArrowKeyCodes.indexOf(code) >= 0);
 }
 
 /**
@@ -198,6 +202,15 @@ function processArrowKeys(start:ArrowKeyElement, event:KeyboardEvent, verticalOn
     if (arrowFromInputGroup(start, code)) {
         event.preventDefault();  // Don't cause cursor movement within the cell
         return true;
+    }
+    if (isArrowKey(code) && isComplexInputGroup(_currentInputGroup)) {
+        // Complex input groups have special handling
+        const next = findNextNonLinear(start, code);
+        if (next) {
+            event.preventDefault();
+            moveFocus(next);
+            return true;
+        }
     }
 
     var inpClass = 'word-input letter-input';
@@ -223,25 +236,25 @@ function processArrowKeys(start:ArrowKeyElement, event:KeyboardEvent, verticalOn
 
     // If !verticalOnly, consider horizontal movement keys
     else if (code == ArrowNext) {
-        const next = event.ctrlKey ? findNextWordGroup2d(start, plusX)
-            : findNextInput(start, plusX, 0, inpClass, skipClass);
+        const next = event.ctrlKey ? findNextWordGroup2d(start, _plusX)
+            : findNextInput(start, _plusX, 0, inpClass, skipClass);
         moveFocus(next);
         event.preventDefault();
         return true;
     }
     else if (code == ArrowPrior) {
-        const prior = event.ctrlKey ? findNextWordGroup2d(start, -plusX)
-            : findNextInput(start, -plusX, 0, inpClass, skipClass);
+        const prior = event.ctrlKey ? findNextWordGroup2d(start, -_plusX)
+            : findNextInput(start, -_plusX, 0, inpClass, skipClass);
         moveFocus(prior);
         event.preventDefault();
         return true;
     }
     else if (code == 'Home') {
-        moveFocus(findRowEndInput(start, -plusX, event.ctrlKey));
+        moveFocus(findRowEndInput(start, -_plusX, event.ctrlKey));
         return true;
     }
     else if (code == 'End') {
-        moveFocus(findRowEndInput(start, plusX, event.ctrlKey));
+        moveFocus(findRowEndInput(start, _plusX, event.ctrlKey));
         return true;
     }
     return false;
@@ -315,7 +328,7 @@ function fakeKeyboardEvent(event:InputEvent):KeyboardEvent {
  */
 export function onLetterInput(event:InputEvent) {
     // REVIEW: ignoring isComposing, since it is often true
-    if (keyDownUnidentified) {
+    if (_keyDownUnidentified) {
         const fake = fakeKeyboardEvent(event);
         onLetterKeyDown(fake);
         var post = onLetterKey(fake);
@@ -340,8 +353,8 @@ export function onLetterKey(evt:KeyboardEvent): boolean {
     }
 
     var input:HTMLInputElement = evt.currentTarget as HTMLInputElement;
-    if (input != keyDownTarget) {
-        keyDownTarget = null;
+    if (input != _keyDownTarget) {
+        _keyDownTarget = null;
         // key-down likely caused a navigation
 
         if (evt.code == 'Tab' && document.activeElement == input && isArrowKeyElement(document.activeElement)) {
@@ -351,7 +364,7 @@ export function onLetterKey(evt:KeyboardEvent): boolean {
 
         return true;
     }
-    keyDownTarget = null;
+    _keyDownTarget = null;
 
     var code = evt.code;
     if (code == undefined || code == '') {
@@ -369,7 +382,7 @@ export function onLetterKey(evt:KeyboardEvent): boolean {
     //     // Do nothing. User hasn't typed
     //     return true;
     // }
-    if (isArrowKey(code)) {
+    if (isArrowKey(code, true)) {
         // Do nothing. Navigation happened on key down.
         return true;
     }
@@ -413,10 +426,12 @@ export function afterInputUpdate(input:TextInputElement, key:string) {
         text = text.toUpperCase();
     }
     var overflow = '';
+    const skipNonInput = findParentOfClass(input, 'navigate-literals')
+        ? undefined : 'letter-non-input';
     var nextInput = findParentOfClass(input, 'vertical')
-        ? findNextInput(input, 0, 1, 'letter-input', 'letter-non-input')
-        : (findNextGroupInput(input, true, true, 'letter-input', 'letter-non-input') 
-            || findNextInput(input, plusX, 0, 'letter-input', 'letter-non-input'));
+        ? findNextInput(input, 0, 1, 'letter-input', skipNonInput)
+        : (findNextGroupInput(input, true, true, 'letter-input', skipNonInput) 
+            || findNextInput(input, _plusX, 0, 'letter-input', skipNonInput));
 
     var multiLetter = hasClass(input.parentNode, 'multiple-letter');
     var word = multiLetter || hasClass(input.parentNode, 'word-cell') || hasClass(input, 'word-input');
@@ -839,7 +854,7 @@ function updateExtractionData(extracted:string|HTMLElement, value:string, ready:
  */
 export function onWordInput(event:InputEvent) {
     // REVIEW: ignoring isComposing, since it is often true
-    if (keyDownUnidentified) {
+    if (_keyDownUnidentified) {
         onWordKey(fakeKeyboardEvent(event));
     }
 }
@@ -1169,7 +1184,7 @@ function findNextInput( start: ArrowKeyElement,
             return find;
         }
     }
-    const back = dx == -plusX || dy < 0;
+    const back = dx == -_plusX || dy < 0;
     let next = findNextOfClassGroup(start, cls, clsSkip, 'text-input-group', back ? -1 : 1) as ArrowKeyElement;
     while (next != null && next.disabled) {
         next = findNextOfClassGroup(next, cls, clsSkip, 'text-input-group', back ? -1 : 1) as ArrowKeyElement;
@@ -1192,10 +1207,10 @@ function findNextInput( start: ArrowKeyElement,
  */
 function findRowEndInput(start: ArrowKeyElement, dx: number, global:boolean)
                             : ArrowKeyElement {
-    if (!global && currentInputGroup) {
+    if (!global && _currentInputGroup) {
         // Go to start or end of group
-        let row = getInputGroupMembers(currentInputGroup)
-        if ((plusX * dxFromGroup(currentInputGroup) < 0) || (dyFromGroup(currentInputGroup) < 0)) {
+        let row = getInputGroupMembers(_currentInputGroup)
+        if ((_plusX * dxFromGroup(_currentInputGroup) < 0) || (dyFromGroup(_currentInputGroup) < 0)) {
             // Group goes backward
             dx = -dx;
         }
@@ -1245,9 +1260,9 @@ function spaceOverNextInput(input: TextInputElement, code: string) {
         }
     }
 
-    if (input != null && currentInputGroup) {
+    if (input != null && _currentInputGroup) {
         // Space and backspace at the end of a group no longer need to obey the group.
-        let row = getInputGroupMembers(currentInputGroup)
+        let row = getInputGroupMembers(_currentInputGroup)
         let index = row.indexOf(input);
         if (index >= 0) {
             if (code == 'Backspace') {
@@ -1277,9 +1292,9 @@ function spaceOverNextInput(input: TextInputElement, code: string) {
     // Delete only deletes the current cell
     // Space deletes and moves forward
     prior = null;
-    var dxDel = code == 'Backspace' ? -plusX : plusX;
+    var dxDel = code == 'Backspace' ? -_plusX : _plusX;
     var dyDel = code == 'Backspace' ? -1 : 1;
-    if (priorInputValue.length == 0) {
+    if (_priorInputValue.length == 0) {
         var discoverRoot = findParentOfClass(input, 'letter-grid-discover');
         if (discoverRoot != null) {
             prior = findParentOfClass(input, 'vertical')
@@ -1434,6 +1449,34 @@ function compareHorizontal(a:Element, b:Element): number {
         return -1;
     }
     return 0;  // Some amount of horizontal overlap
+}
+
+/**
+ * Compare the two elements' horizontal rectangles.
+ * @param cur One element
+ * @param test Another element that is even with, left, or right.
+ * @returns the horizontal distance going from a's center to b's center.
+ */
+function diffHorizontalCenters(a:Element, b:Element): number {
+    const rcA = scaleDOMRect(a.getBoundingClientRect(), 0.9);
+    const rcB = scaleDOMRect(b.getBoundingClientRect(), 0.9);
+    const centerA = rcA.left + rcA.width / 2;
+    const centerB = rcB.left + rcB.width / 2;
+    return centerB - centerA;
+}
+
+/**
+ * Compare the two elements' vertical rectangles.
+ * @param cur One element
+ * @param test Another element that is even with, above, or below.
+ * @returns the vertical distance going from a's center to b's center.
+ */
+function diffVerticalCenters(a:Element, b:Element): number {
+    const rcA = scaleDOMRect(a.getBoundingClientRect(), 0.9);
+    const rcB = scaleDOMRect(b.getBoundingClientRect(), 0.9);
+    const centerA = rcA.top + rcA.height / 2;
+    const centerB = rcB.top + rcB.height / 2;
+    return centerB - centerA;
 }
 
 /**
@@ -1598,6 +1641,12 @@ function findNext2dInput(   root: Element,
         const elmt = row[i];
         const relX = compareHorizontal(elmt, start);
         if ((dx == 0 && relX == 0) || (dx >= 0 && relX > 0)) {
+            if (dx == 0 && last) {
+                // Take the last, if it's closer to pure vertical
+                if (Math.abs(diffHorizontalCenters(last, start)) < Math.abs(diffHorizontalCenters(elmt, start))) {
+                    return last;
+                }
+            }
             return elmt;  // The first item that matches the qualification
         }
         else if (dx <= 0 && relX < 0) {
@@ -1606,13 +1655,13 @@ function findNext2dInput(   root: Element,
     }
     if (!last && dy == 0) {
         // Wrap to next/previous line
-        return findNext2dInput(root, start, dx, dx * plusX, cls, clsSkip);
+        return findNext2dInput(root, start, dx, dx * _plusX, cls, clsSkip);
     }
     return last || null;
 }
 
 /**
- * If there are multile root elements of class letter-grid-2d, then reaching 
+ * If there are multiple root elements of class letter-grid-2d, then reaching 
  * the end of one should find the next.
  * @param root The current letter-grid-2d
  * @param dir +1 for forward, -1 for prev, where direction is HTML order, not rectangles
@@ -1632,6 +1681,33 @@ function findNext2dColumn(root: Element, dir: number): Element {
         }
     }
     return document.getElementById('pageBody') as Element;
+}
+
+/**
+ * Handle arrow keys in non-linear groups
+ * @param start The current element, which IS in a non-linear group
+ * @param code The arrow key code indicating the desired direction (e.g., 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight')
+ */
+function findNextNonLinear(start: ArrowKeyElement, code: string): ArrowKeyElement|null {
+    // Find the input immediately before and after
+    // REVIEW: should wrap always == true?
+    const f = findNextGroupInput(start, true, true);
+    const b = findNextGroupInput(start, false, true);
+    if (!f || !b) {
+        // If there's only one, take that
+        return f || b || null;
+    }
+    // Then pick whichever one is closest to the desired cardinal direction
+    const dx = code == 'ArrowRight' ? 1 : code == 'ArrowLeft' ? -1 : 0;
+    const dy = code == 'ArrowDown' ? 1 : code == 'ArrowUp' ? -1 : 0;
+    if (dx != 0) {
+        const horz = diffHorizontalCenters(b, f);
+        return (dx * horz) >= 0 ? f : b;
+    }
+    else {
+        const vert = diffVerticalCenters(b, f);
+        return (dy * vert) >= 0 ? f : b;
+    }
 }
 
 /**
@@ -1696,7 +1772,7 @@ function findNextByPosition(root: Element,
 
     // Try again, but look in the next row/column
     rect = start.getBoundingClientRect();
-    pos = plusX > 0 ? { x: rect.x + (dy > 0 ? rect.width - 1 : 1), y: rect.y + (dx > 0 ? rect.height - 1 : 1) }
+    pos = _plusX > 0 ? { x: rect.x + (dy > 0 ? rect.width - 1 : 1), y: rect.y + (dx > 0 ? rect.height - 1 : 1) }
                     : { x: rect.x + (dy < 0 ? rect.width - 1 : 1), y: rect.y + (dx < 0 ? rect.height - 1 : 1) }
     let distance2 = 0;
     let wrap:ArrowKeyElement|null = null;
@@ -1718,12 +1794,12 @@ function findNextByPosition(root: Element,
         let d = 0, d2 = 0;
         if (dx != 0) {
             // Look for inputs in the next row, using dx as a dy
-            d = (rect.y + rect.height / 2 - pos.y) / (dx * plusX);
+            d = (rect.y + rect.height / 2 - pos.y) / (dx * _plusX);
             d2 = rect.x / dx;
         }
         else if (dy != 0) {
             // Look for inputs in the next row, using dx as a dy
-            d = (rect.x + rect.width / 2 - pos.x) / (dy * plusX);
+            d = (rect.x + rect.width / 2 - pos.x) / (dy * _plusX);
             d2 = rect.y / dy;
         }
         // Remember the earliest (d2) element in nearest next row (d)
@@ -1909,11 +1985,11 @@ function getCurrentInputGroup(elmt: ArrowKeyElement) : string|null {
         return null;
     }
     const groups = inputGroups.split(' ');
-    if (currentInputGroup) {
-        if (groups.indexOf(currentInputGroup) >= 0) {
-            return currentInputGroup;
+    if (_currentInputGroup) {
+        if (groups.indexOf(_currentInputGroup) >= 0) {
+            return _currentInputGroup;
         }
-        let prevPrefix = currentInputGroup.split(':')[0];
+        let prevPrefix = _currentInputGroup.split(':')[0];
         for (let i = 0; i < groups.length; i++) {
             if (groups[i].split(':')[0] == prevPrefix) {
                 return groups[i];
@@ -1932,7 +2008,7 @@ function getCurrentInputGroup(elmt: ArrowKeyElement) : string|null {
  */
 export function setCurrentInputGroup(elmt: ArrowKeyElement) {
     let newGroup:string|null = null;
-    if (inputGroupElement != elmt) {
+    if (_inputGroupElement != elmt) {
         // Moving group focus to this element
         newGroup = getCurrentInputGroup(elmt);
     }
@@ -1941,12 +2017,12 @@ export function setCurrentInputGroup(elmt: ArrowKeyElement) {
         const inputGroups = getOptionalStyle(elmt, 'data-input-groups');
         if (inputGroups) {
             const groups = inputGroups.split(' ');
-            let index = groups.indexOf(currentInputGroup || '');
+            let index = groups.indexOf(_currentInputGroup || '');
             index = (index + 1) % groups.length;
             newGroup = groups[index];
         }
     }
-    if (newGroup != currentInputGroup) {
+    if (newGroup != _currentInputGroup) {
         removeClassGlobally('input-group');
         if (newGroup) {
             const members = getInputGroupMembers(newGroup);
@@ -1954,17 +2030,30 @@ export function setCurrentInputGroup(elmt: ArrowKeyElement) {
                 toggleClass(members[i], 'input-group', true);
             }
         }
-        currentInputGroup = newGroup;
+        _currentInputGroup = newGroup;
     }
-    inputGroupElement = newGroup ? elmt : null;
+    _inputGroupElement = newGroup ? elmt : null;
 }
 
 const oppositeDirectionPrefix: {[key: string]: string} = {
     'u': 'd',
     'd': 'u',
     'l': 'r',
-    'r': 'l'
+    'r': 'l',
 };
+
+const complexDirections: Set<string> = new Set(['cw', 'ccw']);
+
+function isComplexInputGroup(inputGroup:string|null): boolean {
+    if (!inputGroup) {
+        return false;
+    }
+    let prefix = inputGroup.split(':')[0];
+    if (!prefix) {
+        return false;  // Current group doesn't use directions
+    }
+    return complexDirections.has(prefix);
+}
 
 /**
  * When in an element group, arrow keys have additional meanings.
@@ -1977,17 +2066,21 @@ const oppositeDirectionPrefix: {[key: string]: string} = {
  * @returns True if the arrow only switches group. False if it moves the selection.
  */
 export function arrowFromInputGroup(elmt: ArrowKeyElement, code:string):boolean {
-    if (!currentInputGroup) {
+    if (!_currentInputGroup) {
         return false;
     }
-    let prevPrefix = currentInputGroup.split(':')[0];
+    if (!isArrowKey(code)) {
+        return false;
+    }
+    if (isComplexInputGroup(_currentInputGroup)) {
+        return false;  // Complex input groups have special handling
+    }
+
+    let prevPrefix = _currentInputGroup.split(':')[0];
     if (!prevPrefix) {
         return false;  // Current group doesn't use directions
     }
 
-    if (!code.startsWith('Arrow')) {
-        return false;
-    }
     let dirPrefix = code.substring(5, 6).toLowerCase();
     if (!(dirPrefix in oppositeDirectionPrefix)) {
         return false;  // ?!
@@ -2016,7 +2109,7 @@ export function arrowFromInputGroup(elmt: ArrowKeyElement, code:string):boolean 
                 for (let i = 0; i < members.length; i++) {
                     toggleClass(members[i], 'input-group', true);
                 }
-                currentInputGroup = groupName;
+                _currentInputGroup = groupName;
                 return true;
             }
         }
@@ -2037,6 +2130,28 @@ function comparableGroupName(group:string) {
         group = `${parts[0]}:${parts[1]}`;
     }
     return group;
+}
+
+/**
+ * When a group uses indexing instead of simple positioning, the group name should have an additional index part.
+ * Either "[direction]:[group]:[index]" or at least "[direction]::[index]".
+ * Fallback: "[direction]:[index]"
+ * @param elem An element in the current input group
+ * @returns The index part of the group name, or 0 if none is specified.
+ */
+function indexFromGroupName(elem:ArrowKeyElement) {
+    const group = getCurrentInputGroup(elem);
+    if (!group) {
+        return 0;
+    }
+    let parts = group.split(':');
+    if (parts.length > 2) {
+        return parseInt(parts[2], 10);
+    }
+    if (parts.length == 2) {
+        return parseInt(parts[1], 10);
+    }
+    return 0;
 }
 
 /**
@@ -2104,12 +2219,12 @@ function getInputGroupMembers(group: string,
 function dxFromGroup(groupName: string): number {
     const parts = groupName.split(':');
     if (parts.length <= 1) {
-        return plusX;
+        return _plusX;
     }
     const pref = parts[0].toLowerCase();
     if (pref.indexOf('r') >= 0) { return 1; }
     if (pref.indexOf('l') >= 0) { return -1; }
-    if (pref.indexOf('h') >= 0) { return plusX; }
+    if (pref.indexOf('h') >= 0) { return _plusX; }
     return 0;
 }
 
@@ -2129,7 +2244,7 @@ function dyFromGroup(groupName: string): number {
     const pref = parts[0].toLowerCase();
     if (pref.indexOf('d') >= 0) { return 1; }
     if (pref.indexOf('u') >= 0) { return -1; }
-    if (pref.indexOf('v') >= 0) { return plusX; }
+    if (pref.indexOf('v') >= 0) { return _plusX; }
     return 0;
 }
 
@@ -2154,12 +2269,11 @@ function findNextGroupInput(start: ArrowKeyElement,
 
     let dx = dxFromGroup(groupName);
     let dy = dyFromGroup(groupName);
+    let sidx = 0, nidx = 0;
     if (dx == 0 && dy == 0) {
-        // TODO: 0/0 will mean indexed
-        // Group names will have an index suffix (i.e. 'grp:1')
-        // Forward means climb the index
-        console.error(`Input group "${groupName}" has unrecognized direction prefix.`);
-        return null;
+        // 0/0 means indexed
+        // Group names will have an index suffix (i.e. 'cw:grp:1')
+        sidx = indexFromGroupName(start);
     }
     if (!fwd) {
         dx = -dx;
@@ -2170,7 +2284,19 @@ function findNextGroupInput(start: ArrowKeyElement,
     let next:ArrowKeyElement|null = null;
     for (let i = 0; i < elements.length; i++) {
         const elmt = elements[i];
-        if (compareHorizontal(elmt, start) == dx && compareVertical(elmt, start) == dy) {
+        if (dx == 0 && dy == 0) {
+            // Elements of group must be indexed with an addition ':'.
+            // Example: cw:a:1 .. cw:a:6, or even cw::1 .. cw::6
+            let idx = indexFromGroupName(elmt);
+            // fwd means find the next higher index; else the next lower
+            if (fwd ? (idx > sidx) : (idx < sidx)) {
+                if (!next || (fwd ? (idx < nidx) : (idx > nidx))) {
+                    next = elmt;
+                    nidx = idx;
+                }
+            }
+        }
+        else if (compareHorizontal(elmt, start) == dx && compareVertical(elmt, start) == dy) {
             if (!next || (compareHorizontal(elmt, next) == -dx && compareVertical(elmt, next) == -dy)) {
                 next = elmt;
             }
@@ -2180,7 +2306,14 @@ function findNextGroupInput(start: ArrowKeyElement,
     if (!next && wrap) {
         for (let i = 0; i < elements.length; i++) {
             const elmt = elements[i];
-            if (!next || (compareHorizontal(elmt, next) == -dx && compareVertical(elmt, next) == -dy)) {
+            if (dx == 0 && dy == 0) {
+                let idx = indexFromGroupName(elmt);
+                if (!next || (fwd ? (idx < nidx) : (idx > nidx))) {
+                    next = elmt;
+                    nidx = idx;
+                }
+            }
+            else if (!next || (compareHorizontal(elmt, next) == -dx && compareVertical(elmt, next) == -dy)) {
                 next = elmt;
             }
         }

@@ -96,3 +96,23 @@ Make sure to update other projects' `package.json` to the latest:
 ```
 
 Packages are published to GitHub Packages as `@davidggarber/puzzyl-kit`.
+
+### Alpha-debugging
+
+Client events that consume puzzyl-kit may have an alpha debugging mode,
+which links to a local puzzyl-kit. 
+In that case, you want to build our dev mode, with full non-minified symbols.
+
+```
+npm run dev
+```
+
+### Watch-mode
+
+For real-time development, run dev mode and stay in watch mode to rebuild incrementally.
+```
+npm run dev:debug
+^C to exit watch
+```
+
+There is also an `npm run build:debug`, but that is less likely what you need.
