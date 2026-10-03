@@ -1,7 +1,7 @@
-import { consoleComment, expandContents, popBuilderElement, pushBuilderElement, pushRange, shouldThrow, warnIfSuspiciouslyEmpty } from "./builder";
-import { evaluateAttribute, keyExistsInContext, makeFloat } from "./builderContext";
+import { expandContents, popBuilderElement, pushBuilderElement, pushRange, shouldThrow, warnIfSuspiciouslyEmpty } from "./builder";
+import { evaluateAttribute, makeFloat } from "./builderContext";
 import { isTag } from "./classUtil";
-import { ContextError, debugTagAttrs, elementSourceOffset, elementSourceOffseter, traceTagComment, wrapContextError } from "./contextError";
+import { ContextError, elementSourceOffset, elementSourceOffseter, traceTagComment, wrapContextError } from "./contextError";
 
 export type ifResult = {
   passed:boolean;
@@ -54,6 +54,7 @@ export function startIfBlock(src:HTMLElement, result:ifResult):Node[] {
     let notex = evaluateAttribute(src, 'notex', true, false, null);
     let not = evaluateAttribute(src, 'not', true, false);
     let test = evaluateAttribute(src, 'test', true, false);
+    let size = evaluateAttribute(src, 'size', true, false);
 
     if (isTag(src, 'else')) {
       result.passed = true;
@@ -73,19 +74,39 @@ export function startIfBlock(src:HTMLElement, result:ifResult):Node[] {
       }
     }
     else if (not !== undefined) {
-      result.passed = (typeof(not) === 'boolean') ? !not :
-        typeof(not) === 'string' ? ((not === 'false') || (not === ''))
+      result.passed = (typeof(not) === 'boolean') ? !not
+        : typeof(not) === 'string' ? ((not === 'false') || (not === ''))
         : (not === null);
     }
-    else if (test !== undefined) {
-      const testTok = elementSourceOffseter(src, 'test');
+    else if (test !== undefined || size !== undefined) {
+      const testTok = elementSourceOffseter(src, size !== undefined ? 'size' : 'test');
+      if (size !== undefined) {
+        test = Array.isArray(size) ? size.length
+          : typeof(size) === 'string' ? size.length
+          : typeof(size) === 'object' ? Object.keys(size).length
+          : undefined;  // invalid parameter for size
+        if (test === undefined) {
+          throw new ContextError(typeof(size) + " value cannot be measured by 'size' queries", testTok);
+        }
+      }
 
       let value:string|null;
       if ((value = evaluateAttribute(src, 'eq', false, false)) !== undefined) {
-        result.passed = test === value;  // REVIEW: no casting of either
+        if (typeof(test) == 'number' && typeof(value) == 'string') {
+          // If test is a number, the eq is likely raw HTML
+          result.passed = test === parseFloat(value as string);
+        }
+        else {
+          result.passed = test === value;  // REVIEW: no casting of either
+        }
       }
       else if ((value = evaluateAttribute(src, 'ne', false, false)) !== undefined) {  // not-equals
-        result.passed = test !== value;  // REVIEW: no casting of either
+        if (typeof(test) == 'number' && typeof(value) == 'string') {
+          result.passed = test !== parseFloat(value as string);
+        }
+        else {
+          result.passed = test !== value;  // REVIEW: no casting of either
+        }
       }
       else if ((value = evaluateAttribute(src, 'lt', false, false)) != null) {  // less-than
         result.passed = makeFloat(test, testTok) < makeFloat(value, elementSourceOffseter(src, 'lt'));
@@ -136,7 +157,7 @@ export function startIfBlock(src:HTMLElement, result:ifResult):Node[] {
       }
     }
     else {
-      throw new ContextError('<' + src.localName + '> elements must have an evaluating attribute: test, not, exists, or notex');
+      throw new ContextError('<' + src.localName + '> elements must have an evaluating attribute: test, not, exists, notex, or size');
     }
   }
   catch (ex) {
