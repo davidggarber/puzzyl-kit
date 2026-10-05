@@ -94,7 +94,7 @@ export function startIfBlock(src:HTMLElement, result:ifResult):Node[] {
       if ((value = evaluateAttribute(src, 'eq', false, false)) !== undefined) {
         if (typeof(test) == 'number' && typeof(value) == 'string') {
           // If test is a number, the eq is likely raw HTML
-          result.passed = test === parseFloat(value as string);
+          result.passed = test === parseFloat(value);
         }
         else {
           result.passed = test === value;  // REVIEW: no casting of either
@@ -102,7 +102,7 @@ export function startIfBlock(src:HTMLElement, result:ifResult):Node[] {
       }
       else if ((value = evaluateAttribute(src, 'ne', false, false)) !== undefined) {  // not-equals
         if (typeof(test) == 'number' && typeof(value) == 'string') {
-          result.passed = test !== parseFloat(value as string);
+          result.passed = test !== parseFloat(value);
         }
         else {
           result.passed = test !== value;  // REVIEW: no casting of either

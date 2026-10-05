@@ -414,13 +414,13 @@ function appendResponse(block:HTMLDivElement, response:string):boolean {
             response = response.substring(0, caret);
 
             // Keep any url args
-            var urlArgs = (window.location.search ?? "?").substring(1);
-            if (urlArgs) {
+            var searchArgs = (window.location.search ?? "?").substring(1);
+            if (searchArgs) {
                 if (response.indexOf('?') >= 0) {
-                    response += '&' + urlArgs;
+                    response += '&' + searchArgs;
                 }
                 else {
-                    response += '?' + urlArgs;
+                    response += '?' + searchArgs;
                 }
             }
         }
@@ -440,13 +440,13 @@ function appendResponse(block:HTMLDivElement, response:string):boolean {
         consoleTrace(`Loading ${response}`);
 
         // Keep any url args
-        var urlArgs = (window.location.search ?? "?").substring(1);
-        if (urlArgs) {
+        var searchArgs = (window.location.search ?? "?").substring(1);
+        if (searchArgs) {
             if (response.indexOf('?') >= 0) {
-                response += '&' + urlArgs;
+                response += '&' + searchArgs;
             }
             else {
-                response += '?' + urlArgs;
+                response += '?' + searchArgs;
             }
         }
 

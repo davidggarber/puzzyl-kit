@@ -24,7 +24,7 @@ import { createRatingUI } from "./rating";
  * Cache the URL parameneters as a dictionary.
  * Arguments that don't specify a value receive a default value of true
  */
-const urlArgs: Record<string, string | boolean> = {};
+export const urlArgs: Record<string, string | boolean> = {};
 
 /**
  * Cache the original, pre-modified HTML, in case there is an error to point to

@@ -1098,7 +1098,7 @@ export function resetPuzzleProgress(puzzleFile:string) {
  * @param page The meta-clue label (i.e. part 1 or B)
  * @param obj Any meta object structure
  */
-function saveMetaMaterials(puzzle:string, up:number, page:string, obj:object) {
+export function saveMetaMaterials(puzzle:string, up:number, page:string, obj:object) {
     var key = getOtherFileHref(puzzle, up) + "-" + page;
     localStorage.setItem(key, JSON.stringify(obj));
 }
