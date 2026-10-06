@@ -333,12 +333,12 @@ export function decodeAndValidate(gl:GuessLog) {
             // Guess was expected. It may have multiple responses.
             const multi = encoded.split('|');
             for (let i = 0; i < multi.length; i++) {
-                solved = appendResponse(block, multi[i]) || solved;
+                solved = appendResponse(guess, block, multi[i]) || solved;
             }
         }
         else {
             // Guess does not match any hashes
-            appendResponse(block, no_match_response);
+            appendResponse(guess, block, no_match_response);
         }
         pingEventServer(solved ? EventSyncActivity.Solve : EventSyncActivity.Attempt, guess);
     }
@@ -383,15 +383,18 @@ function appendGuess(gl:GuessLog): HTMLDivElement {
 
 /**
  * Append a response to a guess block.
- * @param block The div containing the guess, and any other responses to the same guess
+ * @param guess The user's guess, normalized.
+ * @param block The div containing the guess, and any other responses to the same guess.
  * @param response The response, prefixed with the response type
  * The type is pulled off, and dictates the formatting.
  * Some types have side-effects, in addition to text.
  * If the response is only the type, pre-canned text is used instead.
  * @returns true if the response indicates the puzzle has been fully solved
  */
-function appendResponse(block:HTMLDivElement, response:string):boolean {
+function appendResponse(guess: string, block:HTMLDivElement, response:string):boolean {
     const type = parseInt(response[0]);
+    notifyOnSubmit(guess, type);
+
     response = response.substring(1);
     if (response.length == 0 && type < default_responses.length) {
         response = default_responses[type];
@@ -502,6 +505,21 @@ function appendResponse(block:HTMLDivElement, response:string):boolean {
     }
     return false;
 }
+
+type onSubmitCallback = (guess:string, response:number) => void;
+
+/**
+ * Notify the onSubmit callback, if any, with the user's guess and the response code.
+ * @param guess The user's guess
+ * @param response The response code (from ResponseType)
+ */
+function notifyOnSubmit(guess: string, response: number) {
+    var fn = theBoiler().onSubmit;
+    if (fn) {
+        fn(guess, response);
+    }
+}
+
 
 /**
  * Rot-13 cipher, maintaining case.

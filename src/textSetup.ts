@@ -428,10 +428,18 @@ function setupLetterCells() {
                 const dataNumber = cell.getAttribute('data-number');
                 if (dataNumber != null) {
                     inp.setAttribute('data-number', dataNumber);
+                    // data-number is often set from patterns, but it can be set other ways.
+                    // When that happens, data-extract-order will be missing.
+                    if (!inp.hasAttribute('data-extract-order')) {
+                        inp.setAttribute('data-extract-order', dataNumber);
+                    }
                 }
             }
             else {
                 // Implicit number based on reading order
+                if (!inp.hasAttribute('data-extract-order')) {
+                    inp.setAttribute('data-extract-order', extracteeIndex.toString());
+                }
                 inp.setAttribute('data-number', "" + extracteeIndex++);
             }
         }

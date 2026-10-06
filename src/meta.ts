@@ -15,6 +15,7 @@ export type MetaParams = {
   up?: number,                 // The ID is a relative path. If there is an up step, how many?
   count: number,               // How many separate materials to check for
   onSync?: MetaSyncCallback,   // Function on the page to call when materials have changed
+  canChange?: boolean,         // Can a given meta-materials be modified? Most are fixed - either we have them or we don't
   refillClass?: string,        // Class of contains to refill when templates update
   refillTemplate?: string,     // ID of template to invoke for refill
 };
@@ -44,6 +45,7 @@ export function setupMetaSync(param:MetaParams) {
     id: param.id,
     count: param.count,
     onSync: param.onSync,
+    canChange: param.canChange,
     refillClass: param.refillClass,
     refillTemplate: param.refillTemplate,
     materials: new Array(param.count).fill(null),
@@ -91,11 +93,15 @@ export function setupMetaSync(param:MetaParams) {
 export function scanMetaMaterials(force?:boolean) {
   let changed = force || false;
   for (var i = 0; i < _metaInfo.count; i++) {
-    if (_metaInfo.materials[i]) {
+    if (_metaInfo.materials[i] && !_metaInfo.canChange) {
       continue;  // materials should never change. Either we have them or we don't.
     }
     var materials = loadMetaMaterials(_metaInfo.id, _metaInfo.up || 0, i);
     if (materials) {
+      if (_metaInfo.canChange && _metaInfo.materials[i]
+          && JSON.stringify(_metaInfo.materials[i]) === JSON.stringify(materials)) {
+        continue;  // They didn't change this time
+      }
       _metaInfo.materials[i] = materials;
       changed = true;
     }

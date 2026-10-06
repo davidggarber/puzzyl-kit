@@ -224,6 +224,7 @@ export type BoilerPlateData = {
     onStamp?: (stampTarget:HTMLElement) => void;
     reloadOnRefresh?: boolean;  // set to true to always reload, or false to always restart. undefined invites a UI.
     onRestore?: () => void;
+    onSubmit?: (attempt:string, response:number) => void;
 }
 
 const print_as_color = { id:'printAs', html:"<div style='color:#666;'>Print as <span style='color:#FF0000;'>c</span><span style='color:#538135;'>o</span><span style='color:#00B0F0;'>l</span><span style='color:#806000;'>o</span><span style='color:#7030A0;'>r</span>.</div>" };
