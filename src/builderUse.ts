@@ -1,5 +1,5 @@
 import { isTrace } from "./boilerplate";
-import { expandContents, initElementStack, popBuilderElement, pushBuilderElement, shouldThrow } from "./builder";
+import { cloneWithContext, expandContents, initElementStack, popBuilderElement, pushBuilderElement, shouldThrow } from "./builder";
 import { cloneText, complexAttribute, popBuilderContext, pushBuilderContext } from "./builderContext";
 import { ContextError, elementSourceOffset, wrapContextError } from "./contextError";
 import { getTemplate } from "./templates";
@@ -27,6 +27,9 @@ export function useTemplate(node:HTMLElement, tempId?:string|null):Node[] {
   if (!tempId) {
     tempId = node.getAttribute('template');
     if (!tempId) {
+      // Treat this as a generic <use> tag
+      debugger;
+      return [cloneWithContext(node)];
       throw new ContextError('<use> tag must specify a template attribute');
     }
     tempId = cloneText(tempId, false);

@@ -172,6 +172,7 @@ function firstBuilderElement():HTMLElement|null {
   for (const t of btags) {
     const tags = document.getElementsByTagName(t);
     for (let i=0; i < tags.length; i++) {
+      if (t == 'use' && !tags[i].hasAttribute('template')) { continue; }  // Not a real builder element
       toggleClass(tags[i], '_builder_control_', true);
     }
   }
@@ -396,7 +397,8 @@ export function expandControlTags(rootId:string|boolean) {
     src = firstBuilderElement();
   }
   const ifResult:ifResult = {passed:false, index:0};
-  for ( ; src !== null; src = firstBuilderElement()) {
+  // If building from a root, then only 1 pass. If discovering, repeat
+  for ( ; src !== null; src = rootId ? null : firstBuilderElement()) {
     try {
       maybeBreak(src.id);
       maybeBreak(src.tagName);
@@ -578,7 +580,7 @@ const nameSpaces = {
  * @param context A dictionary of all accessible values
  * @returns A cloned element
  */
-function cloneWithContext(elmt:HTMLElement):Element {
+export function cloneWithContext(elmt:HTMLElement):Element {
   const tagName = normalizeName(elmt.localName);
   let clone:Element;
   // if (tagName == 'svg' && elmt.namespaceURI != svg_xmlns) {
