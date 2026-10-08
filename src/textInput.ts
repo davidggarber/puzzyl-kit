@@ -342,7 +342,7 @@ export function onLetterInput(event:InputEvent) {
 /**
  * Process the end of a keystroke
  * @param evt - A keyboard event
- * @return true if some post-processing is still needed
+ * @return true if listeners should hear an inputChanged event
  */
 export function onLetterKey(evt:KeyboardEvent): boolean {
     if (!evt) {
@@ -362,7 +362,9 @@ export function onLetterKey(evt:KeyboardEvent): boolean {
             setCurrentInputGroup(document.activeElement as ArrowKeyElement);
         }
 
-        return true;
+        // Different keydown means the evt.target was not the actual recipient
+        // of the key event. So don't send bogus inputChanged events.
+        return false;
     }
     _keyDownTarget = null;
 

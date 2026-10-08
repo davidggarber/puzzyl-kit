@@ -28,9 +28,7 @@ export function useTemplate(node:HTMLElement, tempId?:string|null):Node[] {
     tempId = node.getAttribute('template');
     if (!tempId) {
       // Treat this as a generic <use> tag
-      debugger;
       return [cloneWithContext(node)];
-      throw new ContextError('<use> tag must specify a template attribute');
     }
     tempId = cloneText(tempId, false);
   }
