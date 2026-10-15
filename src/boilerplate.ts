@@ -178,7 +178,7 @@ export function forceReload(): boolean|undefined {
 
 type AbilityData = {
     textInput?: boolean|string;  // true by default
-    notes?: boolean;
+    // notes?: boolean;  // deprecated
     checkMarks?: boolean;
     highlights?: boolean;
     decoder?: boolean|string;  // If a string, should be Proper case
@@ -202,6 +202,8 @@ export type BoilerPlateData = {
     copyright?: string;
     type?: string;  // todo: enum
     feeder?: string;
+    feederTitle?: string;
+    feederLink?: string;
     lang?: string;  // en-us by default
     paperSize?: string;  // letter by default
     orientation?: string;  // portrait by default
@@ -377,7 +379,7 @@ function createPrintQr():HTMLImageElement|null {
  * @param icon_use the purpose of the icon
  * @returns A div element, to be appended to the pageWithinMargins
  */
-function createTypeIcon(puzzleType:string, icon_use:string=''):HTMLDivElement {
+function createTypeIcon(puzzleType:string, icon_use:string='', title?:string, link?:string):HTMLDivElement {
     if (!icon_use) {
         icon_use = 'puzzle';
     }
@@ -386,7 +388,21 @@ function createTypeIcon(puzzleType:string, icon_use:string=''):HTMLDivElement {
     const icon = document.createElement('img');
     icon.id = 'icons-' + iconDiv.childNodes.length;
     icon.src = getSafariDetails().iconRoot + puzzleType.toLocaleLowerCase() + '.png';
+
+    let alt = iconTypeAltText[puzzleType as keyof typeof iconTypeAltText] || (puzzleType + ' ' + icon_use);
+    if (title) {
+        icon.title = title;
+        alt = title;
+    }
     icon.alt = iconTypeAltText[puzzleType as keyof typeof iconTypeAltText] || (puzzleType + ' ' + icon_use);
+
+    if (link) {
+        icon.addEventListener('click', () => {
+            window.open(link, '_blank', 'noopener,noreferrer');
+        });
+        icon.style.cursor = 'pointer';
+    }
+
     iconDiv.appendChild(icon);
     return iconDiv;
 }
@@ -581,7 +597,7 @@ function boilerplate(bp: BoilerPlateData) {
         margins.appendChild(createTypeIcon(bp.type));
     }
     if (bp.feeder) {
-        margins.appendChild(createTypeIcon(bp.feeder, 'feeder'));
+        margins.appendChild(createTypeIcon(bp.feeder, 'feeder', bp.feederTitle, bp.feederLink));
     }
 
     // If the puzzle has a pre-setup method they'd like to run before abilities and contents are processed, do so now
@@ -777,11 +793,11 @@ function setupAbilities(head:HTMLHeadElement, margins:HTMLDivElement, data:Abili
         ability.id = 'ability';
         page.appendChild(ability);
     }
-    let fancy = '';
+    let abilityHelp: string[] = [];
     let count = 0;
     if (data.checkMarks) {
         setupCrossOffs();
-        fancy += '<span id="check-ability" title="Click items to check them off">✔️</span>';
+        abilityHelp.push('checkMarks');
         count++;
     }
     if (data.highlights) {
@@ -789,12 +805,12 @@ function setupAbilities(head:HTMLHeadElement, margins:HTMLDivElement, data:Abili
         if (theBoiler()?.abilities?.textInput) {
             instructions = "Type ` or ctrl+click to highlight cells";
         }
-        fancy += '<span id="highlight-ability" title="' + instructions + '" style="text-shadow: 0 0 3px black;">💡</span>';
+        abilityHelp.push('highlights');
         setupHighlights();
         count++;
     }
     if (data.dragDrop !== undefined && data.dragDrop !== false) {
-        fancy += '<span id="drag-ability" title="Drag &amp; drop enabled" style="text-shadow: 0 0 3px black;">👈</span>';
+        abilityHelp.push('dragDrop');
         if (typeof(data.dragDrop === 'string')) {
             preprocessSvgDragFunctions(data.dragDrop as string);
             indexAllDragDropFields();
@@ -809,54 +825,69 @@ function setupAbilities(head:HTMLHeadElement, margins:HTMLDivElement, data:Abili
     }
     if (data.stamping) {
         // Review: ability icon
-        fancy += '<span id="stamp-ability" title="Click on objects to interact"><img id="stamp-ability-icon" src="' 
-            + eventRelStamp('stamp-glow.png') + '" style="height:22px;" /></span>';
+        abilityHelp.push('stamping');
         preprocessStampObjects();
         indexAllDrawableFields();
         linkCss(safariDetails.cssRoot + 'StampTools.css');
     }
     if (data.straightEdge) {
-        fancy += '<span id="drag-ability" title="Line-drawing enabled" style="text-shadow: 0 0 3px black;">📐</span>';
+        abilityHelp.push('straightEdge');
         preprocessRulerFunctions(EdgeTypes.straightEdge, false);
         linkCss(safariDetails.cssRoot + 'StraightEdge.css');
         //indexAllVertices();
     }
     if (data.wordSearch) {
-        fancy += '<span id="drag-ability" title="word-search enabled" style="text-shadow: 0 0 3px black;">💊</span>';
+        abilityHelp.push('wordSearch');
         preprocessRulerFunctions(EdgeTypes.wordSelect, true);
         linkCss(safariDetails.cssRoot + 'WordSearch.css');
         //indexAllVertices();
     }
     if (data.hashiBridge) {
-        // fancy += '<span id="drag-ability" title="word-search enabled" style="text-shadow: 0 0 3px black;">🌉</span>';
+        abilityHelp.push('hashiBridge');
         preprocessRulerFunctions(EdgeTypes.hashiBridge, true);
         linkCss(safariDetails.cssRoot + 'HashiBridge.css');
         //indexAllVertices();
     }
     if (data.subway) {
+        abilityHelp.push('subway');
         linkCss(safariDetails.cssRoot + 'Subway.css');
         // Don't setupSubways() until all styles have applied, so CSS-derived locations are final
     }
-    if (data.notes) {
-        setupNotes(margins);
-        // no ability icon
-    }
     if (data.scratchPad) {
+        // no special ability - this should be ubiquitous across puzzles
         setupScratch();
         let instructions = "Ctrl+click anywhere on the page to create a note.";
-        fancy += '<span id="highlight-ability" title="' + instructions + '" style="text-shadow: 0 0 3px black;">📔</span>';
     }
     if (data.decoder) {
-        setupDecoderToggle(page, data.decoder);
+        abilityHelp.push('decoder');
+        setupDecoderToggle(page, ability, data.decoder);
     }
-    ability.innerHTML = fancy;
-    ability.style.bottom = data.decoder ? '4pt' : '20pt';
-    if (count == 2) {
-        ability.style.right = '0.6in';
+
+    // Ability visuals
+    if (safariDetails.helpLink) {
+        const helpImg = document.createElement('img');
+        helpImg.id = 'help-toggle';  // -toggle blocks focusNearestInput from stealing clicks
+        helpImg.src = safariDetails.iconRoot + 'help.png';
+        helpImg.title = 'Help, tips & tricks';
+        helpImg.addEventListener('click', function() { openPuzzleHelp(safariDetails.helpLink!, abilityHelp); });
+        ability.appendChild(helpImg);
     }
 
     // Release our lock on css loading
     cssLoaded();
+}
+
+/**
+ * Open the help page on the 'help' tab (so repeated calls open the same tab).
+ * Add URL args for any features that are special to this page.
+ * @param url This event's puzzle help page
+ * @param args Any abilities on the current page that may merit explicit help
+ */
+function openPuzzleHelp(url:string, args:string[]) {
+    if (args.length > 0) {
+        url += '?' + args.join('&');
+    }
+    window.open(url, 'help');
 }
 
 /**

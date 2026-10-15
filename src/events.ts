@@ -29,6 +29,7 @@ export type PuzzleEventDetails = {
   qr_folders?: { [key: string]: string};  // Folder for any QR codes
   solverSite?: string;  // URL to a separate solver website, where players can enter answers
   backLinks?: { [key: string]: BackLinkDetails };  // key: URL trigger -> puzzleListBackLink
+  helpLink?: string;  // URL to a help page for every puzzle
   validation?: boolean|string;  // whether to allow local validation
   eventSync?: string;  // When present, this identifies the database event group
   usageSync?: string;  // When present, this identifies the database for usage stats. If absent, eventSync is used.

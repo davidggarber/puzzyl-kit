@@ -12,6 +12,9 @@ import { indexAllNoteFields, indexAllCheckFields, indexAllHighlightableFields,
  *  - Highlighting of objects
  * Each kind of annotation is optional. It can be turned on
  * in a puzzle's metadata. 
+ * 
+ * !!!!!!!!!! DEPRECATED !!!!!!!!!!
+ * This feature has been superceded by scratchPad
  */
 
 /**

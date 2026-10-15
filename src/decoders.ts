@@ -1,3 +1,5 @@
+import { toggleClass } from "./classUtil";
+import { getSafariDetails } from "./events";
 
 /**
  * The decoder frame is either visible (true), hidden (false), or not present (null)
@@ -38,7 +40,7 @@ function setDecoderState(state: boolean) {
  * @param margins the parent node of the toggle UI
  * @param mode the default decoder mode, if specified
  */
-export function setupDecoderToggle(margins:HTMLDivElement|null, mode?:boolean|string) {
+export function setupDecoderToggle(margins:HTMLDivElement|null, ability?:HTMLElement|null, mode?:boolean|string) {
     let iframe = document.getElementById('decoder-frame') as HTMLIFrameElement;
     if (iframe == null) {
         iframe = document.createElement('iframe');
@@ -50,22 +52,32 @@ export function setupDecoderToggle(margins:HTMLDivElement|null, mode?:boolean|st
         document.getElementsByTagName('body')[0]?.appendChild(iframe);
     }
 
-    let toggle = document.getElementById('decoder-toggle') as HTMLSpanElement;
-    if (toggle == null && margins != null) {
-        toggle = document.createElement('span');
-        toggle.id = 'decoder-toggle';
-        toggle.title = 'Open a helpful decoder at right';
-        margins.appendChild(toggle);
+    // let toggle = document.getElementById('decoder-toggle') as HTMLSpanElement;
+    // if (toggle == null && margins != null) {
+    //     toggle = document.createElement('span');
+    //     toggle.id = 'decoder-toggle';
+    //     toggle.title = 'Open a helpful decoder at right';
+    //     margins.appendChild(toggle);
+    // }
+    if (!ability) {
+        ability = document.getElementById('ability');
     }
-    if (toggle) {
+    if (ability) {
+        const safariDetails = getSafariDetails();
+        const decoderImg = document.createElement('img');
+        decoderImg.id = 'decoder-toggle';  // -toggle blocks focusNearestInput from stealing clicks
+        decoderImg.src = safariDetails.iconRoot + 'decoder.png';
+        decoderImg.title = 'Show/hide Decoder';
+
         const visible = getDecoderState();
         if (visible) {
-            toggle.innerText = 'Hide Decoders';
+            decoderImg.title = 'Hide Decoders';
         }
         else {
-            toggle.innerText = 'Show Decoders';
+            decoderImg.title = 'Show Decoders';
         }
-        toggle.addEventListener('click', toggleDecoder)
+        ability.appendChild(decoderImg);
+        decoderImg.addEventListener('click', toggleDecoder)
     }
 }
 

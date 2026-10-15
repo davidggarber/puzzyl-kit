@@ -5,6 +5,7 @@ import { saveScratches } from "./storage";
 
 let scratchPad:HTMLDivElement|undefined = undefined;
 let currentScratchInput:HTMLTextAreaElement|undefined = undefined;
+let endScratchDrag:(() => void)|undefined = undefined;
 
 /**
  * Setup a scratch pad that is the same size as the page.
@@ -20,6 +21,7 @@ export function setupScratch() {
     scratchPad.id = 'scratch-pad';
 
     scratchPad.addEventListener('click', function (e) { scratchPadClick(e); } );
+    page.addEventListener('pointerdown', function (e) { scratchPadClick(e); } );
     page.addEventListener('click', function (e) { scratchPageClick(e); } );
     window.addEventListener('blur', function (e) { scratchFlatten(null); } );
 
@@ -80,7 +82,7 @@ function scratchClick(evt:MouseEvent) {
  * When the user clicks away, flatten
  * @param evt 
  */
-function scratchPadClick(evt:MouseEvent) {
+function scratchPadClick(evt:MouseEvent|PointerEvent) {
     if (!evt.ctrlKey) {
         if (scratchFromPoint(evt.clientX, evt.clientY) != currentScratchInput) {
             scratchFlatten(evt);
@@ -94,6 +96,10 @@ function scratchPadClick(evt:MouseEvent) {
  * @param evt The mouse event
  */
 function scratchPageClick(evt:MouseEvent) {
+    if (!evt.ctrlKey) {
+        scratchPadClick(evt);
+        return;
+    }
     if (evt.ctrlKey) {
         scratchFlatten(evt);
         const targets = document.elementsFromPoint(evt.clientX, evt.clientY);
@@ -221,6 +227,7 @@ function scratchFlatten(ev:Event|null) {
         return;
     }
 
+    endScratchDrag?.();
     toggleClass(scratchPad, 'topmost', false);
 
     // Avoid re-entrancy
@@ -247,8 +254,6 @@ function scratchFlatten(ev:Event|null) {
       // Remove the entire div
       div.parentNode?.removeChild(div);
     }
-
-    scratchPad!.removeEventListener('dragover', allowDropOnScratchPad);
 
     saveScratches(scratchPad);
 }
@@ -381,20 +386,23 @@ function textIntoScratchDiv(text:string, div:HTMLDivElement) {
     }
 }
 
-const allowDropOnScratchPad = (ev:DragEvent) => { ev.preventDefault(); };
+const allowDropOnScratchPage = (ev:DragEvent) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+};
 
 function attachDragHandle(div:HTMLDivElement) {
+    const page = scratchPad!.parentElement!;
     const handle = document.createElement('img');
     handle.src = eventRelIcon('ScratchMove.png');
+    handle.draggable = true;
     toggleClass(handle, 'scratch-drag-handle', true);
     div.appendChild(handle);
 
     const doScratchDrop = (ev:DragEvent) => dropScratchDiv(ev);
     
-    div.setAttribute('draggable', 'true');
-    div.addEventListener('dragstart', startDragScratch);
-    div.addEventListener('dragend', endDragScratch);
-    scratchPad!.addEventListener('dragover', allowDropOnScratchPad);
+    handle.addEventListener('dragstart', startDragScratch);
+    handle.addEventListener('dragend', endDragScratch);
 
     let startX:number = 0;
     let startY:number = 0;
@@ -410,13 +418,18 @@ function attachDragHandle(div:HTMLDivElement) {
         startY = ev.clientY;
         startLeft = parseFloat(div.style.left);
         startTop = parseFloat(div.style.top);
-        scratchPad!.addEventListener('drop', doScratchDrop);
+        // The scratch pad may not be hit-tested outside its absolutely positioned notes.
+        page.addEventListener('dragover', allowDropOnScratchPage, true);
+        page.addEventListener('drop', doScratchDrop, true);
+        endScratchDrag = endDragScratch;
         if (ev.dataTransfer) {
             ev.dataTransfer.effectAllowed = "move";
         }
     }
     
     function dropScratchDiv(ev:DragEvent) {
+        ev.preventDefault();
+        ev.stopPropagation();
         const dx = ev.clientX - startX;
         const dy = ev.clientY - startY;
         div.style.left = startLeft + dx + 'px';
@@ -426,8 +439,12 @@ function attachDragHandle(div:HTMLDivElement) {
         currentScratchInput?.focus();
     }
     
-    function endDragScratch(ev:DragEvent) {
+    function endDragScratch() {
         toggleClass(div, 'dragging', false);
-        scratchPad!.removeEventListener('drop', doScratchDrop);
+        page.removeEventListener('dragover', allowDropOnScratchPage, true);
+        page.removeEventListener('drop', doScratchDrop, true);
+        startX = 0;
+        startY = 0;
+        endScratchDrag = undefined;
     }
 }

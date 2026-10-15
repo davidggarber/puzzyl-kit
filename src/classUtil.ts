@@ -1,4 +1,4 @@
-import { getParentIf } from "./builder";
+import { getParentIf, normalizeName } from "./builder";
 import { cloneText, complexAttribute } from "./builderContext";
 import { hasInputGroup, setCurrentInputGroup } from "./textInput";
 
@@ -283,7 +283,7 @@ export function isTag(elmt: Element|null, tag: string|string[]) {
         return false;
     }
 
-    const tagName = elmt.tagName.toUpperCase();
+    const tagName = normalizeName(elmt.tagName).toUpperCase();
     if (typeof(tag) == 'string') {
         return tagName == tag.toUpperCase();
     }
@@ -352,7 +352,7 @@ export function findParentOfTag(elmt: Element, parentTag: string)
     }
     parentTag = parentTag.toUpperCase();
     while (elmt !== null) {
-        const name = elmt.tagName.toUpperCase();
+        const name = normalizeName(elmt.tagName).toUpperCase();
         if (name === parentTag) {
             return elmt;
         }
