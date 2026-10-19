@@ -15,6 +15,7 @@ The following may be added to any puzzle URL to trigger optional functionality
 - print
 - icon
 - modal
+- qr=[relative image path]
 
 ### Layout testing
 - scan-layout
@@ -80,5 +81,10 @@ Indicates that page is being rendered for snapshot purposes.
 
 Special case for pages that are not puzzles, but are meant to act as floating modal dialogs (in iframes).
 
+## qr
 
+Specifies a print QR image, for example `?qr=QR/img.png` or `?qr=../QR/img.png`.
+The value must be a relative path (resolved against the document's base URL).
+Absolute URLs, paths starting with `/`, backslashes, and control characters are rejected with a console warning.
+This option applies only when neither `qr_base64` nor `print_qr` is configured.
 

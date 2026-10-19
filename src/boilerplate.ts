@@ -360,9 +360,9 @@ function getQrPath():string|undefined {
     return undefined;
 }
 
-function createPrintQr():HTMLImageElement|null {
+function createPrintQr(imgUrl?:string):HTMLImageElement|null {
     // Find relevant folder:
-    const path = getQrPath();
+    const path = imgUrl || getQrPath();
     if (path) {
         const qr = document.createElement('img');
         qr.id = 'qr';
@@ -592,6 +592,19 @@ function boilerplate(bp: BoilerPlateData) {
             margins.appendChild(qrImg);
         }
     }
+    else if (urlArgs['qr']) {
+        const qrArg = urlArgs['qr'];
+        const qrPath = typeof qrArg === 'string' ? qrArg.trim() : '';
+        if (!qrPath || !isRelativePath(qrPath)) {
+            console.warn('The qr URL parameter must be a relative path.');
+        }
+        else {
+            const qrImg = createPrintQr(qrPath);
+            if (qrImg) {
+                margins.appendChild(qrImg);
+            }
+        }
+    }
 
     if (bp.type) {
         margins.appendChild(createTypeIcon(bp.type));
@@ -658,14 +671,15 @@ function theHead(): HTMLHeadElement {
 }
 
 function baseHref(): string {
+    const docHref = document.location.origin + document.location.pathname;
     const bases = document.getElementsByTagName('base');
     for (let i = 0; i < bases.length; i++) {
         var href = bases[i].getAttribute('href');
         if (href) {
-            return relHref(href, document.location.href || '');
+            return relHref(href, docHref);
         }
     }
-    return document.location.href;
+    return docHref;
 }
 
 function relHref(path:string, fromBase?:string): string {
@@ -692,6 +706,15 @@ function relHref(path:string, fromBase?:string): string {
         }
     }
     return bases.join('/');
+}
+
+/**
+ * Ensure that the given path is a relative path, not an absolute URL or file path
+ * @param path A string representing the path to check
+ * @returns True if the path is relative, false otherwise
+ */
+function isRelativePath(path: string): boolean {
+    return !/^(?:[\\/]|[a-z][a-z0-9+.-]*:)|[\\\u0000-\u001f\u007f]/i.test(path);
 }
 
 /**
