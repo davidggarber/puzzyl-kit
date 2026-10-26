@@ -148,9 +148,10 @@ function shouldShowRatings(): boolean {
   if (!safari) {
     return false;
   }
-  if (!safari.eventSync) {
+  if (!safari.syncConfig) {
     return false;
   }
+  return safari.syncConfig.offerRatings?.fun || safari.syncConfig.offerRatings?.difficulty || safari.syncConfig.offerRatings?.feedback;
 
   // Player must have logged in
   // (two reasons: to nail down the event, and because server doesn't have anonymous players)

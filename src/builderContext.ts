@@ -81,6 +81,22 @@ export function valueFromGlobalContext(path:string, maybe?:boolean):any {
 }
 
 /**
+ * Some internal tools set lookup values that the builder can reference.
+ * @param name Any string key
+ * @param value The value to associate with the key
+ */
+export function setGlobalLookup(name:string, value:any) {
+  if (!theBoiler()) {
+    return;
+  }
+  if (!theBoiler().lookup) {
+    theBoiler().lookup = {};
+  }
+  const lookup:Record<string, any> = theBoiler().lookup!;
+  lookup[name] = value;
+}
+
+/**
  * Finish cloning an HTML element
  * @param src The element being cloned
  * @param dest The new element, still in need of attributes

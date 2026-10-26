@@ -1,7 +1,8 @@
 import { isIcon, isIFrame, isModal, isPrint, theBoiler } from "./boilerplate";
 import { consoleTrace } from "./builder";
+import { setGlobalLookup } from "./builderContext";
 import { hasClass, toggleClass } from "./classUtil";
-import { eventRelIcon } from "./events";
+import { eventRelIcon, EventSyncConfig, PuzzleEventDetails, RatingDetails } from "./events";
 import { showRatingUI } from "./rating";
 import { cacheLogin, getLogin, getPuzzleStatus, TryParseJson, updatePuzzleList } from "./storage";
 
@@ -29,30 +30,85 @@ let ActivityRank:{[key: string]: number} = {
   "solved": 5,
 }
 
+function isLocalSync(): boolean {
+  if (window && typeof window !== 'undefined') {
+    const u = new URL(window.location.href);
+    return u.protocol  == 'file:' || u.host.startsWith('127.0.0.1:');
+  }
+  return true;
+}
+
 // Support testing against a local Sync server.
 // Note: test environment does not define 'window'
-const localSync = (typeof window !== 'undefined') ? (window.location.href.substring(0,5) == 'file:') : true;
-let canSyncEvents = false;
+const localSync = isLocalSync();
 
-let _eventName:string|undefined = undefined;
-let _usageEventName:string|undefined = undefined;
-let _playerName:string|undefined = undefined;
-let _teamName:string|undefined = undefined;
-let _emojiAvatar:string|undefined = undefined;
-let _mostProgress:number = -1;  // ActivityRank[hidden]
+class SyncDetails implements EventSyncConfig {
+  eventName: string;
+  eventKey: string;
+  eventSync: string;
+  hasLogin: boolean;
+  hasTeams: boolean;
+  syncSolves: boolean;
+  syncUsage: boolean;
+  offerRatings: RatingDetails;
+
+  // extend the event config with current-puzzle and current-user details
+  canSync: boolean;  // Are we syncing this puzzle? Even if the rest of the event is.
+  playerName?: string;
+  teamName?: string;
+  emojiAvatar?: string;
+  mostProgress: number;
+
+  constructor(details?: EventSyncConfig) {
+    this.canSync = !!details && !!details.eventName
+      && !theBoiler().noSync    // Don't sync if boiler has an explicit noSync=true
+      && !isPrint() && !isIcon() && (!isIFrame() || isModal());  // Don't sync when printing
+
+    // If no details, all syncing is off
+    this.eventName = details?.eventName || '';
+    this.eventKey = details?.eventKey || '_';  // generic should not be blank
+    this.eventSync = details?.eventSync || '';
+    this.hasLogin = details?.hasLogin || false;
+    this.hasTeams = details?.hasTeams || false;
+    this.syncSolves = details?.syncSolves || false;
+    this.syncUsage = details?.syncUsage || false;
+    this.offerRatings = details?.offerRatings || { fun: false, difficulty: false, feedback: false };
+
+    // Player details await login
+    this.playerName = undefined;
+    this.teamName = undefined;
+    this.emojiAvatar = undefined;
+    this.mostProgress = -1;
+  }
+
+  public updatePlayerLookup() {
+    // Update the lookup with the current player name
+    setGlobalLookup('_player_name_', this.playerName);
+    setGlobalLookup('_player_emoji_', this.emojiAvatar);
+    setGlobalLookup('_team_name_', this.teamName);
+  }
+}
+
+let _syncDetails = new SyncDetails();  // syncing off until setup below
+
+export function getSyncDetails(): SyncDetails {
+  return _syncDetails;
+}
 
 function puzzleTitleForSync():string|undefined {
   return theBoiler().titleSync || theBoiler().title;
 }
 
-export function setupEventSync(syncKey?:string, usageKey?:string) {
-  canSyncEvents = !!syncKey   // Don't sync if there's no event key
-    && !theBoiler().noSync    // Don't sync if boiler has an explicit noSync=true
-    && !isPrint() && !isIcon() && (!isIFrame() || isModal());  // Don't sync when printing
-  if (canSyncEvents) {
-    _eventName = syncKey;
-    _usageEventName = usageKey || syncKey;
+export function setupEventSync(ped: PuzzleEventDetails) {
+  if (!ped.syncConfig) {
+    _syncDetails.updatePlayerLookup();
+    return;
+  }
 
+  _syncDetails = new SyncDetails(ped.syncConfig);
+  _syncDetails.updatePlayerLookup();
+
+  if (_syncDetails.canSync) {
     document.addEventListener('visibilitychange', function (event) { autoLogin(); });
     var body = document.getElementsByTagName('body')[0];
     body?.addEventListener('focus', function (event) { autoLogin(); });
@@ -60,24 +116,20 @@ export function setupEventSync(syncKey?:string, usageKey?:string) {
     // Run immediately
     autoLogin();
   }
-  else if (!isPrint() && !isIcon() && !isIFrame()) {
-    // We can still ping usage, even if not syncing an active event
-    _usageEventName = usageKey || syncKey;
-  }
 }
 
 export async function pingEventServer(activity:EventSyncActivity, guess?:string) {
   trackPuzzleProgress(activity);
 
-  if (!canSyncEvents || !_playerName) {
+  if (!_syncDetails.canSync || !_syncDetails.playerName) {
     return;
   }
 
   const data = {
-    eventName: _eventName,
-    player: _playerName,
-    avatar: _emojiAvatar,
-    team: _teamName,
+    eventName: _syncDetails.eventSync,
+    player: _syncDetails.playerName,
+    avatar: _syncDetails.emojiAvatar,
+    team: _syncDetails.teamName,
     puzzle: puzzleTitleForSync(),
     activity: activity,
     data: guess || ''
@@ -91,7 +143,7 @@ export async function pingEventServer(activity:EventSyncActivity, guess?:string)
  * @param activity 
  */
 export function trackPuzzleProgress(activity:EventSyncActivity) {
-  if (!_usageEventName){
+  if (!_syncDetails.syncUsage){
     return;
   }
   const puzzle = puzzleTitleForSync();
@@ -100,17 +152,17 @@ export function trackPuzzleProgress(activity:EventSyncActivity) {
   }
 
   let newProgress = ActivityRank[activity.toLowerCase()];
-  if (newProgress > _mostProgress) {
-    // _mostProgress tracks the current in-browser instance
-    _mostProgress = newProgress;
+  if (newProgress > _syncDetails.mostProgress) {
+    // _syncDetails.mostProgress tracks the current in-browser instance
+    _syncDetails.mostProgress = newProgress;
 
     // Look in local storage for earlier instances
-    const store = 'Usage-Milestone-' + _usageEventName;
+    const store = 'Usage-Milestone-' + _syncDetails.eventSync;
     const cached = getPuzzleStatus(puzzle, undefined, store)?.toLowerCase() || '';
     if (!cached || !(cached in ActivityRank) || (ActivityRank[cached] < newProgress)) {
       // We have gotten farther on this puzzle than we have in the past
       const data = {
-        eventName: _usageEventName,
+        eventName: _syncDetails.eventSync,
         puzzle: puzzle,
         activity: activity,
       };
@@ -135,16 +187,16 @@ export type LoginInfo = {
  * @param team The player's team name (optional)
  * @param emoji The player's emoji avatar (optional)
  */
-function doLogin(player:string, team?:string, emoji?:string) {
-  _playerName = player;
-  _teamName = team;
-  _emojiAvatar = emoji;
+export function doLogin(player:string, team?:string, emoji?:string) {
+  _syncDetails.playerName = player;
+  _syncDetails.teamName = team;
+  _syncDetails.emojiAvatar = emoji;
   const info:LoginInfo = {
       player: player,
       team: team || '',
       emoji: emoji || '',  // IDEA: initials
   };
-  cacheLogin(_eventName, info);
+  cacheLogin(_syncDetails.eventName, info);
   pingEventServer(EventSyncActivity.Open);
   updateLoginUI();
 }
@@ -154,13 +206,13 @@ function doLogin(player:string, team?:string, emoji?:string) {
  * @param isModal If true, helper functions are called on parent. Else, called in local frame.
  * @param deletePlayer If true, tell the server to forget the player. This is async. Else, do nothing async.
  */
-async function doLogout(isModal:boolean, deletePlayer?:boolean) {
+export async function doLogout(isModal:boolean, deletePlayer?:boolean) {
   if (deletePlayer) {
     const data = {
-      eventName: _eventName,
-      player: _playerName,
-      avatar: _emojiAvatar,
-      team: _teamName,
+      eventName: _syncDetails.eventSync,
+      player: _syncDetails.playerName,
+      avatar: _syncDetails.emojiAvatar,
+      team: _syncDetails.teamName,
     };
     let callback:SyncCallback|undefined = undefined;
     try {
@@ -174,8 +226,8 @@ async function doLogout(isModal:boolean, deletePlayer?:boolean) {
     await callSyncApi("DeletePlayer", data, undefined, callback);
   }
 
-  cacheLogin(_eventName, undefined);
-  _playerName = _teamName = _emojiAvatar = undefined;
+  cacheLogin(_syncDetails.eventName, undefined);
+  _syncDetails.playerName = _syncDetails.teamName = _syncDetails.emojiAvatar = undefined;
   updateLoginUI();
 }
 
@@ -184,18 +236,18 @@ async function doLogout(isModal:boolean, deletePlayer?:boolean) {
  * @param event The current event
  */
 function autoLogin() {
-  if (!canSyncEvents) {
+  if (!_syncDetails.canSync) {
     return;
   }
-  const info = getLogin(_eventName);
-  if (info && (_playerName != info.player || _teamName != info?.team)) {
-    _playerName = info.player;
-    _teamName = info.team || '';  // if missing, player is solo
-    _emojiAvatar = info.emoji || '';
+  const info = getLogin(_syncDetails.eventName);
+  if (info && (_syncDetails.playerName != info.player || _syncDetails.teamName != info?.team)) {
+    _syncDetails.playerName = info.player;
+    _syncDetails.teamName = info.team || '';  // if missing, player is solo
+    _syncDetails.emojiAvatar = info.emoji || '';
     pingEventServer(EventSyncActivity.Open);
   }
   else if (!info || !info.player) {
-    _playerName = _teamName = _emojiAvatar = undefined;
+    _syncDetails.playerName = _syncDetails.teamName = _syncDetails.emojiAvatar = undefined;
   }
   updateLoginUI();
 }
@@ -209,11 +261,7 @@ function promptLogin(evt:MouseEvent) {
   dismissLogin(null);
   let modal = document.getElementById('modal-login') as HTMLDivElement;
   let iframe = document.getElementById('modal-iframe') as HTMLIFrameElement;
-  if (modal && iframe) {
-    iframe.src = `LoginUI.xhtml?iframe&modal`;  // &[safari]
-    toggleClass(modal, 'hidden', false);
-  }
-  else {
+  if (!modal) {
     modal = document.createElement('div');
     const content = document.createElement('div');
     const close = document.createElement('span');
@@ -222,10 +270,9 @@ function promptLogin(evt:MouseEvent) {
     iframe.id = 'modal-iframe';
     toggleClass(content, 'modal-content', true);
     toggleClass(close, 'modal-close', true);
-    close.appendChild(document.createTextNode("Ã—"));
+    close.appendChild(document.createTextNode("×"));
     close.title = 'Close';
     close.onclick = function(e) {dismissLogin(e)};
-    iframe.src = `LoginUI.xhtml?iframe&modal`;  // &[safari]
     content.appendChild(close);
     content.appendChild(iframe);
     modal.appendChild(content);
@@ -233,9 +280,12 @@ function promptLogin(evt:MouseEvent) {
     document.getElementById('pageBody')?.appendChild(modal);  // first child of <body>
     document.getElementById('pageBody')?.addEventListener('click', function(event) {dismissLogin(event)});  
   }
+
+  iframe.src = `LoginUI.xhtml?iframe&modal&${_syncDetails.eventKey}`;
+  toggleClass(modal, 'hidden', false);
 }
 
-function dismissLogin(evt:MouseEvent|null) {
+export function dismissLogin(evt:MouseEvent|null) {
   var modal = document.getElementById('modal-login');
   if (modal) {
     if (!hasClass(modal, 'hidden')) {
@@ -250,6 +300,10 @@ function dismissLogin(evt:MouseEvent|null) {
 }
 
 function updateLoginUI() {
+  if (!_syncDetails.hasLogin) {
+    return;
+  }
+  _syncDetails.updatePlayerLookup();
   let div = document.getElementById('Login-bar');
   const body = document.getElementsByTagName('body')[0];
   if (!div) {
@@ -276,21 +330,21 @@ function updateLoginUI() {
     div.appendChild(span);
   }
 
-  toggleClass(body, 'logged-in-player', !!_playerName);
-  toggleClass(body, 'logged-in-avatar', !!_emojiAvatar);
-  toggleClass(body, 'logged-in-team', !!_teamName);
-  toggleClass(div, 'logged-in', !!_playerName);
-  toggleClass(div, 'avatar', !!_emojiAvatar);
-  if (_playerName) {
+  toggleClass(body, 'logged-in-player', !!_syncDetails.playerName);
+  toggleClass(body, 'logged-in-avatar', !!_syncDetails.emojiAvatar);
+  toggleClass(body, 'logged-in-team', !!_syncDetails.teamName);
+  toggleClass(div, 'logged-in', !!_syncDetails.playerName);
+  toggleClass(div, 'avatar', !!_syncDetails.emojiAvatar);
+  if (_syncDetails.playerName) {
     // Logged in
-    if (_emojiAvatar) {
-      avatar.innerText = _emojiAvatar;
+    if (_syncDetails.emojiAvatar) {
+      avatar.innerText = _syncDetails.emojiAvatar;
     }
     else {
-      img.src = _teamName ? eventRelIcon("logged-in-team.png") : eventRelIcon("logged-in.png");
+      img.src = _syncDetails.teamName ? eventRelIcon("logged-in-team.png") : eventRelIcon("logged-in.png");
       avatar.innerHTML = '';
     }
-    span.innerText = _teamName ? (_playerName + ' @ ' + _teamName) : _playerName;
+    span.innerText = _syncDetails.teamName ? (_syncDetails.playerName + ' @ ' + _syncDetails.teamName) : _syncDetails.playerName;
     div.onclick = function(e) { promptLogin(e);};
     div.title = "Log out?";
     showRatingUI(true);
@@ -349,7 +403,7 @@ async function callSyncApi(apiName:string, data:object, jsonCallback?:SyncCallba
 }
 
 export async function refreshTeamHomePage(callback?:SimpleCallback) {
-  if (!canSyncEvents || !_teamName) {
+  if (!_syncDetails.canSync || !_syncDetails.teamName) {
     _teammates = [];
     _teamSolves = {};
     _remoteUnlocked = [];
@@ -363,9 +417,9 @@ export async function refreshTeamHomePage(callback?:SimpleCallback) {
   }
 
   const data = {
-    eventName: _eventName,
-    team: _teamName,
-    player: _playerName,  // not used, but handy for logging
+    eventName: _syncDetails.eventSync,
+    team: _syncDetails.teamName,
+    player: _syncDetails.playerName,  // not used, but handy for logging
   };
 
   if (callback) {
@@ -446,14 +500,14 @@ export function urlSansArgs():string {
  * @param url The file's actual window.location.href
  */
 export async function syncUnlockedFile(metaFeeder:string, url:string) {
-  if (!canSyncEvents || !_teamName) {
+  if (!_syncDetails.canSync || !_syncDetails.teamName) {
     return;
   }
   const data = {
-    eventName: _eventName,
-    player: _playerName,
-    avatar: _emojiAvatar,
-    team: _teamName,
+    eventName: _syncDetails.eventSync,
+    player: _syncDetails.playerName,
+    avatar: _syncDetails.emojiAvatar,
+    team: _syncDetails.teamName,
     puzzle: metaFeeder,
     activity: EventSyncActivity.Unlock,
     data: url
@@ -463,16 +517,16 @@ export async function syncUnlockedFile(metaFeeder:string, url:string) {
 }
 
 export async function sendRating(aspect: string, val: number) {
-  if (!canSyncEvents) {
+  if (!_syncDetails.canSync) {
     return;
   }
   const data = {
-    eventName: _eventName,
-    player: _playerName || "",
-    avatar: _emojiAvatar || "",
-    team: _teamName || "",
+    eventName: _syncDetails.eventSync,
+    player: _syncDetails.playerName || "",
+    avatar: _syncDetails.emojiAvatar || "",
+    team: _syncDetails.teamName || "",
     puzzle: puzzleTitleForSync(),
-    activity: _mostProgress,
+    activity: _syncDetails.mostProgress,
     data: `${aspect}:${val}`
   };
 
@@ -480,16 +534,16 @@ export async function sendRating(aspect: string, val: number) {
 }
 
 export async function sendFeedback(feedback: string) {
-  if (!canSyncEvents) {
+  if (!_syncDetails.canSync) {
     return;
   }
   const data = {
-    eventName: _eventName,
-    player: _playerName || "",
-    avatar: _emojiAvatar || "",
-    team: _teamName || "",
+    eventName: _syncDetails.eventSync,
+    player: _syncDetails.playerName || "",
+    avatar: _syncDetails.emojiAvatar || "",
+    team: _syncDetails.teamName || "",
     puzzle: puzzleTitleForSync(),
-    activity: _mostProgress,
+    activity: _syncDetails.mostProgress,
     data: feedback
   };
 

@@ -18,6 +18,7 @@ import { MetaParams, setupMetaSync } from "./meta";
 import { setupEventSync } from "./eventSync";
 import { preprocessSvgDragFunctions } from "./dragDropSvg";
 import { createRatingUI } from "./rating";
+import { setGlobalLookup } from "./builderContext";
 
 
 /**
@@ -38,19 +39,9 @@ function debugSetup() {
     if (Object.keys(urlArgs).length > 0) {
         return;  // Only process once
     }
-    var search = window.location.search;
-    if (search !== '') {
-        search = search.substring(1);  // trim leading ?
-        var args = search.split('&');
-        for (let i = 0; i < args.length; i++) {
-            var toks = args[i].split('=');
-            if (toks.length > 1) {
-                urlArgs[toks[0].toLowerCase()] = toks[1];
-            }
-            else {
-                urlArgs[toks[0].toLowerCase()] = true;  // e.g. present
-            }
-        }
+    var search = new URLSearchParams(window.location.search);
+    for (let [key, value] of search.entries()) {
+        urlArgs[key.toLowerCase()] = value || true;
     }
     if (urlArgs['body-debug'] != undefined && urlArgs['body-debug'] !== false) {
         toggleClass(document.getElementsByTagName('body')[0], 'debug', true);
@@ -61,6 +52,11 @@ function debugSetup() {
 
     var isiPad = navigator.userAgent.match(/iPad/i) != null;
     toggleClass(document.getElementsByTagName('body')[0], 'iPad', isiPad);
+
+    // Record a few of the urls to lookups
+    setGlobalLookup('_is_print_', isPrint());
+    setGlobalLookup('_is_iframe_', isIFrame());
+    setGlobalLookup('_is_modal_', isModal());
 }
 
 /**
@@ -450,6 +446,15 @@ function boilerplate(bp: BoilerPlateData) {
      *   </html>
      */
 
+    const html:HTMLHtmlElement = document.getElementsByTagName('html')[0] as HTMLHtmlElement;
+    const head:HTMLHeadElement = document.getElementsByTagName('head')[0] as HTMLHeadElement;
+    const body:HTMLBodyElement = document.getElementsByTagName('body')[0] as HTMLBodyElement;
+
+    const safariDetails = getSafariDetails();
+    for (let i = 0; i < safariDetails.links.length; i++) {
+        addLink(head, safariDetails.links[i]);
+    }
+
     if (bp.preBuild) {
         bp.preBuild();
     }
@@ -474,21 +479,11 @@ function boilerplate(bp: BoilerPlateData) {
         constructTable(bp.tableBuilder);
     }
 
-    const html:HTMLHtmlElement = document.getElementsByTagName('html')[0] as HTMLHtmlElement;
-    const head:HTMLHeadElement = document.getElementsByTagName('head')[0] as HTMLHeadElement;
-    const body:HTMLBodyElement = document.getElementsByTagName('body')[0] as HTMLBodyElement;
-    const pageBody:HTMLDivElement = document.getElementById('pageBody') as HTMLDivElement;
-
     if (bp.title) {
         document.title = bp.title;
     }
     
     html.lang = bp.lang || 'en-us';
-
-    const safariDetails = getSafariDetails();
-    for (let i = 0; i < safariDetails.links.length; i++) {
-        addLink(head, safariDetails.links[i]);
-    }
 
     const viewport = document.createElement('meta') as HTMLMetaElement;
     viewport.name = 'viewport';
@@ -542,7 +537,7 @@ function boilerplate(bp: BoilerPlateData) {
         toggleClass(body, safariDetails.eventClass);
     }
 
-    setupEventSync(safariDetails.eventSync, safariDetails.usageSync);
+    setupEventSync(safariDetails);
 
     const page: HTMLDivElement = createSimpleDiv({id:'page'});
     if (bp.paperSize != 'none') {
@@ -551,7 +546,9 @@ function boilerplate(bp: BoilerPlateData) {
     const margins: HTMLDivElement = createSimpleDiv({cls:'pageWithinMargins'});
     body.appendChild(page);
     page.appendChild(margins);
+    const pageBody:HTMLDivElement = document.getElementById('pageBody') as HTMLDivElement;
     if (pageBody) {
+        pageBody.parentNode?.removeChild(pageBody);
         margins.appendChild(pageBody);
     }
     else {

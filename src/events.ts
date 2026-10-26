@@ -1,4 +1,5 @@
 import { BoilerPlateData, urlArgExists } from "./boilerplate";
+import { setGlobalLookup } from "./builderContext";
 
 export type LinkDetails = {
   rel: string;  // 'preconnect', 'stylesheet', ...
@@ -31,9 +32,22 @@ export type PuzzleEventDetails = {
   backLinks?: { [key: string]: BackLinkDetails };  // key: URL trigger -> puzzleListBackLink
   helpLink?: string;  // URL to a help page for every puzzle
   validation?: boolean|string;  // whether to allow local validation
-  eventSync?: string;  // When present, this identifies the database event group
-  usageSync?: string;  // When present, this identifies the database for usage stats. If absent, eventSync is used.
+  syncConfig?: EventSyncConfig;  // Optional sync configuration for this event
+  getEventSync?: () => EventSyncConfig|undefined;  // When present, can be called to configure sync mode
   ratings?: RatingDetails;  // When present, show the rating UI on every puzzle
+}
+
+// Optional sync configurations
+// Supports the same event being re-run, with a fresh set of 
+export type EventSyncConfig = {
+  eventName: string;  // Event name, suitable for display to users
+  eventKey: string;  // A unique string for each event, to differentiate resources
+  eventSync: string;  // Identifies the event on the server. *Required if any of the below is true*.
+  hasLogin: boolean;  // If false, no attempt to get user identity at all. Any syncing is anonymous.
+  hasTeams: boolean;   // If false, every player is solo or anonymous.
+  syncSolves: boolean;  // If true, each user solve is sent to the server
+  syncUsage: boolean;  // If true, do track finer-grain user progress
+  offerRatings: RatingDetails;  // Which, if any, ratings UI to display
 }
 
 export type RatingDetails = {
@@ -84,9 +98,6 @@ export function initSafariDetails(boiler?: BoilerPlateData): PuzzleEventDetails 
   // New API: event details passed directly — no registry lookup needed
   if (boiler?.event) {
     safariDetails = boiler.event;
-    if (boiler.lookup) {
-      (boiler.lookup as Record<string, any>)['_safari'] = safariDetails.eventSync ?? '';
-    }
     return safariDetails;
   }
 
@@ -98,6 +109,18 @@ export function initSafariDetails(boiler?: BoilerPlateData): PuzzleEventDetails 
  * Return the details of this puzzle event
  */
 export function getSafariDetails(): PuzzleEventDetails {
+  if (safariDetails) {
+    // Details can specify a callback to set the event based on a URL arg, for example.
+    // The first caller will lock it.
+    if (!safariDetails.syncConfig && safariDetails.getEventSync) {
+      safariDetails.syncConfig = safariDetails.getEventSync();
+    }
+    if (safariDetails.syncConfig) {
+      setGlobalLookup('_safari_', safariDetails.syncConfig.eventKey);
+      setGlobalLookup('_safari_name_', safariDetails.syncConfig.eventName);
+      setGlobalLookup('_safari_sync_', safariDetails.syncConfig.eventSync);
+    }
+  }
   return safariDetails;
 }
 
@@ -141,22 +164,6 @@ export function enableValidation(): boolean {
     return false;
   }
   return urlArgExists(safariDetails.validation);
-}
-
-/**
- * Look up an event by ID, title, or eventSync key.
- * Only finds events that have been registered via registerEvent().
- */
-export function lookupSafari(name: string): PuzzleEventDetails | null {
-  if (name in eventRegistry) {
-    return eventRegistry[name];
-  }
-  for (const safari of Object.values(eventRegistry)) {
-    if (safari.title === name || safari.eventSync === name) {
-      return safari;
-    }
-  }
-  return null;
 }
 
 /**
