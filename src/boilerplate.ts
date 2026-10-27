@@ -1,6 +1,6 @@
 import { clicksFindInputs, textSetup } from "./textSetup"
 import { hasClass, TextInputElement, toggleClass } from "./classUtil"
-import { setupNotes, setupCrossOffs, setupHighlights } from "./notes"
+import { setupCrossOffs, setupHighlights } from "./notes"
 import { setupDecoderToggle } from "./decoders"
 import { checkLocalStorage, indexAllDragDropFields, indexAllDrawableFields, TryParseJson } from "./storage";
 import { preprocessStampObjects } from "./stampTools";
@@ -15,7 +15,7 @@ import { diffSummarys, LayoutSummary, renderDiffs, summarizePageLayout } from ".
 import { wrapContextError } from "./contextError";
 import { setupScratch } from "./scratch";
 import { MetaParams, setupMetaSync } from "./meta";
-import { setupEventSync } from "./eventSync";
+import { preSetupEventSync, setupEventSync } from "./eventSync";
 import { preprocessSvgDragFunctions } from "./dragDropSvg";
 import { createRatingUI } from "./rating";
 import { setGlobalLookup } from "./builderContext";
@@ -212,8 +212,8 @@ export type BoilerPlateData = {
     lookup?: object;  // a dictionary of json data available to builder code
     preBuild?: () => void;  // invoked before the builder - i.e. to create templates
     postBuild?: () => void;  // invoked after the builder is done
-    preSetup?: () => void;
-    postSetup?: () => void;
+    preSetup?: () => void;  // runs after the builder, but before ability setup
+    postSetup?: () => void;  // runs after all other boilerplate has been set up
     metaParams?: MetaParams;
     googleFonts?: string;  // A list of fonts, separated by commas
     onNoteChange?: (inp:HTMLInputElement) => void;
@@ -454,6 +454,8 @@ function boilerplate(bp: BoilerPlateData) {
     for (let i = 0; i < safariDetails.links.length; i++) {
         addLink(head, safariDetails.links[i]);
     }
+
+    preSetupEventSync(safariDetails);
 
     if (bp.preBuild) {
         bp.preBuild();

@@ -95,11 +95,11 @@ export function getSyncDetails(): SyncDetails {
   return _syncDetails;
 }
 
-function puzzleTitleForSync():string|undefined {
-  return theBoiler().titleSync || theBoiler().title;
-}
-
-export function setupEventSync(ped: PuzzleEventDetails) {
+/**
+ * Initialize sync globals
+ * @param ped Event details
+ */
+export function preSetupEventSync(ped: PuzzleEventDetails) {
   if (!ped.syncConfig) {
     _syncDetails.updatePlayerLookup();
     return;
@@ -107,7 +107,19 @@ export function setupEventSync(ped: PuzzleEventDetails) {
 
   _syncDetails = new SyncDetails(ped.syncConfig);
   _syncDetails.updatePlayerLookup();
+  autoLogin(false);
+}
 
+function puzzleTitleForSync():string|undefined {
+  return theBoiler().titleSync || theBoiler().title;
+}
+
+/**
+ * Initialize listeners
+ * Update UI
+ * @param ped Event details
+ */
+export function setupEventSync(ped: PuzzleEventDetails) {
   if (_syncDetails.canSync) {
     document.addEventListener('visibilitychange', function (event) { autoLogin(); });
     var body = document.getElementsByTagName('body')[0];
@@ -232,10 +244,11 @@ export async function doLogout(isModal:boolean, deletePlayer?:boolean) {
 }
 
 /**
- * Try to join an existing log-in
- * @param event The current event
+ * Try to join an existing log-in. 
+ * Does not prompt the user; only uses cached info.
+ * @param updateUI If true, update the login UI with login info.
  */
-function autoLogin() {
+function autoLogin(updateUI:boolean=true) {
   if (!_syncDetails.canSync) {
     return;
   }
@@ -249,7 +262,9 @@ function autoLogin() {
   else if (!info || !info.player) {
     _syncDetails.playerName = _syncDetails.teamName = _syncDetails.emojiAvatar = undefined;
   }
-  updateLoginUI();
+  if (updateUI) {
+    updateLoginUI();
+  }
 }
 
 /**
