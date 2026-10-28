@@ -419,9 +419,7 @@ async function callSyncApi(apiName:string, data:object, jsonCallback?:SyncCallba
 
 export async function refreshTeamHomePage(callback?:SimpleCallback) {
   if (!_syncDetails.canSync || !_syncDetails.teamName) {
-    _teammates = [];
-    _teamSolves = {};
-    _remoteUnlocked = [];
+    _teamSyncData = blankTeamSyncData();
     if (callback) {
       callback();
     }
@@ -454,20 +452,42 @@ export type PlayerPresence = {
   Presence?: string;
 }
 
-let _teammates:PlayerPresence[];
-
-export interface SolveSummary {
-  [key: string]: string // Key is puzzle name, value is concatenated avatars
+export type PlayerAvatar = {
+  Player: string;
+  Avatar: string;
 }
 
-let _teamSolves:SolveSummary;
+export type PuzzleSolvers = {
+  PuzzleName: string;
+  Solvers: PlayerAvatar[];
+}
+
+export type SolveSummary = Record<string, PlayerAvatar[]>
+// {
+//   [key: string]: string // Key is puzzle name, value is concatenated avatars
+// }
 
 export type UnlockedPiece = {
   Piece: string;
   Url: string;
 }
 
-let _remoteUnlocked: UnlockedPiece[] = [];
+export type TeamSyncData = {
+  teamMates: PlayerPresence[];
+  teamSolves: SolveSummary;
+  remoteUnlocked: UnlockedPiece[];
+}
+function blankTeamSyncData(): TeamSyncData {
+  return {
+    teamMates: [],
+    teamSolves: {},
+    remoteUnlocked: []
+  };
+}
+let _teamSyncData: TeamSyncData = blankTeamSyncData();
+export function getTeamSyncData(): TeamSyncData {
+  return _teamSyncData;
+}
 
 type SimpleCallback = () => void;
 
@@ -480,17 +500,22 @@ function onRefreshTeamHomePage(json:object) {
   }
   var update = false;
   if ('teammates' in json) {
-    _teammates = json['teammates'] as PlayerPresence[];
+    _teamSyncData.teamMates = json['teammates'] as PlayerPresence[];
     update = true;
   }
 
   if ('solves' in json) {
-    _teamSolves = json['solves'] as SolveSummary;
+    const solves = json['solves'] as PuzzleSolvers[];
+    // Convert the array of PuzzleSolvers into a SolveSummary
+    _teamSyncData.teamSolves = solves.reduce((acc, ps) => {
+      acc[ps.PuzzleName] = ps.Solvers;
+      return acc;
+    }, {} as SolveSummary);
     update = true;
   }
 
   if ('unlocked' in json) {
-    _remoteUnlocked = json['unlocked'] as UnlockedPiece[];
+    _teamSyncData.remoteUnlocked = json['unlocked'] as UnlockedPiece[];
     update = true;
   }
 

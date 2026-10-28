@@ -248,6 +248,10 @@ type InjectionFunc = (parent:Element, nodes:Node[]) => void;
  * @returns The first injected element, if any (ignoring any prefing text). If no elements, can return text.
  */
 function injectFromTemplate(parent:Element, callback:InjectionFunc, tempId:string, args?:Record<string, any>):Node|undefined {
+  if (!parent) {
+    throw new ContextError('Parent element does not exist');
+  }
+
   if (!tempId) {
     throw new ContextError('Template ID not specified');
   }
