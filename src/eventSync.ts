@@ -468,7 +468,7 @@ export type SolveSummary = Record<string, PlayerAvatar[]>
 // }
 
 export type UnlockedPiece = {
-  Piece: string;
+  PuzzleName: string;
   Url: string;
 }
 
