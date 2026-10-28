@@ -832,7 +832,9 @@ function focusNearestInput(evt:PointerEvent) {
 
         if (nearest) {
             if (isTag(nearest, 'a') && nearestD < 50) {  // 1/2 inch max
-                nearest.click();
+                if (evt.target !== nearest) {  // If target, link would happen naturally
+                    nearest.click();
+                }
             }
             else if (hasClass(nearest, 'clickable')) {
                 if (hasInputGroup(nearest)) {

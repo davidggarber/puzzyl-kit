@@ -31,7 +31,7 @@ let ActivityRank:{[key: string]: number} = {
 }
 
 function isLocalSync(): boolean {
-  if (window && typeof window !== 'undefined') {
+  if (typeof window !== 'undefined') {
     const u = new URL(window.location.href);
     return u.protocol  == 'file:' || u.host.startsWith('127.0.0.1:');
   }
